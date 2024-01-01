@@ -20,7 +20,7 @@ jobs:
           python-version: '3.12'
       - name: Install system dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y gcc python-dev libkrb5-dev libssl-dev
+          sudo apt-get update && sudo apt-get install -y gcc python3-dev libkrb5-dev libssl-dev
       - name: Install Dependencies
         working-directory: ./CZERTAINLY_PyADCS_Connector
         run: |
