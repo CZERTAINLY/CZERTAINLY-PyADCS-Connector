@@ -27,6 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run Tests
+        working-directory: ./CZERTAINLY_PyADCS_Connector
         run: |
           python manage.py test
       - uses: sonarsource/sonarqube-scan-action@master
