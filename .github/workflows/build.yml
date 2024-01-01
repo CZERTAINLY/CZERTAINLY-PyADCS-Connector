@@ -19,6 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install Dependencies
+        working-directory: ./CZERTAINLY_PyADCS_Connector
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
