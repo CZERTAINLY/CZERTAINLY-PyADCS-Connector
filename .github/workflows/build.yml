@@ -11,6 +11,26 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:15
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: czertainlyuser
+          POSTGRES_PASSWORD: your-strong-password
+          POSTGRES_DB: czertainlydb
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,6 +48,14 @@ jobs:
           pip install -r requirements.txt
       - name: Run Tests
         working-directory: ./CZERTAINLY_PyADCS_Connector
+        env:
+          DATABASE_SCHEMA: pyadcs
+          DATABASE_NAME: czertainlydb
+          DATABASE_USER: czertainlyuser
+          DATABASE_PASSWORD: your-strong-password
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          LOG_LEVEL: DEBUG
         run: |
           python manage.py test
       - uses: sonarsource/sonarqube-scan-action@master
