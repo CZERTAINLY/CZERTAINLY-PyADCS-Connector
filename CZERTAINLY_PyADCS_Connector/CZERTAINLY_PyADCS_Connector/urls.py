@@ -62,4 +62,6 @@ urlpatterns = [
     # Discovery provider callbacks
     path("v1/discoveryProvider/listCertificateAuthority/<str:authority_instance_uuid>", callbacks.get_ca_names),
     path("v1/discoveryProvider/listTemplate/<str:authority_instance_uuid>", callbacks.get_template_names),
+    path("v1/discoveryProvider/caSelect/<str:ca_select_method>/<str:authority_instance_uuid>",
+         callbacks.get_ca_select_configuration),
 ]

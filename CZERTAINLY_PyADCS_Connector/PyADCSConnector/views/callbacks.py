@@ -4,10 +4,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from PyADCSConnector.remoting.winrm.scripts import get_cas_script, get_templates_script
-from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance_name, \
-    create_session_from_authority_instance_uuid
+from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance_uuid
+from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.dump_parser import DumpParser
-from PyADCSConnector.views.attributes import get_winrm_transport_configuration_attributes_list
+from PyADCSConnector.views.attributes import get_winrm_transport_configuration_attributes_list, \
+    get_config_string_attribute, get_ca_name_attribute
 
 
 @require_http_methods(["GET"])
@@ -18,7 +19,25 @@ def get_winrm_transport_configuration(request, kind, wirm_transport, *args, **kw
 
 
 @require_http_methods(["GET"])
+def get_ca_select_configuration(request, ca_select_method: str, authority_instance_uuid: str, *args, **kwargs):
+    attributes = []
+    if ca_select_method == CaSelectMethod.CONFIGSTRING.method:
+        attributes.append(get_config_string_attribute())
+    elif ca_select_method == CaSelectMethod.SEARCH.method:
+        attributes.append(get_ca_name_attribute(get_ca_names_service(authority_instance_uuid)))
+    else:
+        raise Exception("Unknown CA Select Method: " + ca_select_method)
+
+    return JsonResponse(attributes, safe=False,content_type="application/json")
+
+
+@require_http_methods(["GET"])
 def get_ca_names(request, authority_instance_uuid, *args, **kwargs):
+    return JsonResponse(get_ca_names_service(authority_instance_uuid), safe=False,
+                        content_type="application/json")
+
+
+def get_ca_names_service(authority_instance_uuid):
     session = create_session_from_authority_instance_uuid(authority_instance_uuid)
     session.connect()
     result = session.run_ps(get_cas_script())
@@ -42,8 +61,7 @@ def get_ca_names(request, authority_instance_uuid, *args, **kwargs):
          } for ca in cas
     ]
 
-    return JsonResponse(content, safe=False,
-                        content_type="application/json")
+    return content
 
 
 @require_http_methods(["GET"])

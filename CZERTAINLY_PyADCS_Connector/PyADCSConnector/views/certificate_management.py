@@ -11,6 +11,7 @@ from PyADCSConnector.remoting.winrm.scripts import submit_certificate_request_sc
     get_revoke_script
 from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance_uuid
 from PyADCSConnector.utils import attribute_definition_utils
+from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.dump_parser import DumpParser, AuthorityData, TemplateData
 from PyADCSConnector.views.constants import *
 
@@ -40,9 +41,8 @@ def identify_certificate(request, uuid, *args, **kwargs):
 def issue(request, uuid):
     form = json.loads(request.body)
 
-    ca = AuthorityData.from_dict(
-        attribute_definition_utils.get_attribute_value(
-            CA_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+    ca = get_ca_from_attributes(form)
+
     template = TemplateData.from_dict(
         attribute_definition_utils.get_attribute_value(
             TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
@@ -53,8 +53,8 @@ def issue(request, uuid):
 def renew(request, uuid):
     form = json.loads(request.body)
 
-    ca = AuthorityData.from_dict(
-        attribute_definition_utils.get_attribute_value(CA_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+    ca = get_ca_from_attributes(form)
+
     template = TemplateData.from_dict(
         attribute_definition_utils.get_attribute_value(
             TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
@@ -69,8 +69,8 @@ def renew(request, uuid):
 def revoke(request, uuid):
     form = json.loads(request.body)
 
-    ca = AuthorityData.from_dict(
-        attribute_definition_utils.get_attribute_value(CA_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+    ca = get_ca_from_attributes(form)
+
     reason = form["reason"]
     serial_number = get_certificate_serial_number(form["certificate"])
 
@@ -85,8 +85,8 @@ def revoke(request, uuid):
 def identify(request, uuid):
     form = json.loads(request.body)
 
-    ca = AuthorityData.from_dict(
-        attribute_definition_utils.get_attribute_value(CA_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+    ca = get_ca_from_attributes(form)
+
     template = TemplateData.from_dict(
         attribute_definition_utils.get_attribute_value(
             TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
@@ -148,3 +148,29 @@ def get_certificate_serial_number(certificate):
     """
     x509_cert = x509.load_der_x509_certificate(base64.b64decode(certificate), default_backend())
     return '{0:x}'.format(x509_cert.serial_number)
+
+
+def get_ca_from_attributes(form):
+    select_ca_method = attribute_definition_utils.get_attribute_value(
+        SELECT_CA_METHOD_ATTRIBUTE_NAME, form["raProfileAttributes"])
+
+    if select_ca_method == CaSelectMethod.SEARCH.method:
+        ca = AuthorityData.from_dict(
+            attribute_definition_utils.get_attribute_value(
+                CA_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+    elif select_ca_method == CaSelectMethod.CONFIGSTRING.method:
+        config_string = attribute_definition_utils.get_attribute_value(
+            CONFIGSTRING_ATTRIBUTE_NAME, form["raProfileAttributes"])
+        if not config_string:
+            raise Exception("ConfigString is required with selected CA Method: " + select_ca_method)
+        ca_name = config_string.split("\\")[1]
+        computer_name = config_string.split("\\")[0]
+        if not ca_name or not computer_name:
+            raise Exception("Wrong format of ConfigString: " + config_string)
+        ca = AuthorityData(
+            config_string.split("\\")[1], config_string.split("\\")[1], config_string.split("\\")[0],
+            config_string, "", None, None)
+    else:
+        raise Exception("Unknown CA Select Method: " + select_ca_method)
+
+    return ca

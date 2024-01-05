@@ -216,7 +216,8 @@ class DumpParser:
                 complete_record = True
 
             if complete_record:
-                result.append(AuthorityData(name, display_name, computer_name, config_string, ca_type, is_enterprise, is_root))
+                result.append(AuthorityData(
+                    name, display_name, computer_name, config_string, ca_type, is_enterprise, is_root))
                 name = ""
                 display_name = ""
                 computer_name = ""
