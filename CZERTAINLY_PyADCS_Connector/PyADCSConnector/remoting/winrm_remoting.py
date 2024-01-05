@@ -34,7 +34,14 @@ class WinRmRemoting(object):
         command_id = self.protocol.run_command(self.shell_id, command, args)
         result = winrm.Response(self.protocol.get_command_output(self.shell_id, command_id))
         self.protocol.cleanup_command(self.shell_id, command_id)
-        logger.debug("Command result: " + str(result))
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Return code: " + str(result.status_code))
+            if result.status_code != 0:
+                logger.debug("Error: " + result.std_err.decode(encoding='utf-8'))
+            else:
+                logger.debug("Output: " + result.std_out.decode(encoding='utf-8'))
+
         check_result(result)
         return result
 

@@ -8,8 +8,9 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 
 from PyADCSConnector.models.authority_instance import AuthorityInstance
-from PyADCSConnector.remoting.winrm.scripts import get_cas_script, get_templates_script
+from PyADCSConnector.remoting.winrm.scripts import get_templates_script
 from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance
+from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.dump_parser import DumpParser, AuthorityData, TemplateData
 from PyADCSConnector.views.constants import *
 
@@ -116,7 +117,8 @@ def get_discovery_attributes_list(kind):
 
     attribute_list.append(get_discovery_info_attribute())
     attribute_list.append(get_authority_instances_attribute(kind))
-    attribute_list.append(get_ca_name_attribute())
+    attribute_list.append(get_select_ca_method_attribute())
+    attribute_list.append(get_ca_select_group_attribute())
     attribute_list.append(get_template_name_attribute())
     attribute_list.append(get_issued_after_attribute())
 
@@ -128,14 +130,15 @@ def get_raprofile_attributes_list(uuid):
 
     session = create_session_from_authority_instance(authority_instance)
     session.connect()
-    cas = session.run_ps(get_cas_script())
     templates = session.run_ps(get_templates_script())
     session.disconnect()
 
-    cas = DumpParser.parse_authority_data(cas)
     templates = DumpParser.parse_template_data(templates)
 
-    attribute_list = [get_ca_name_ra_profile_attribute(cas), get_template_name_ra_profile_attribute(templates)]
+    attribute_list = [get_select_ca_method_attribute(),
+                      get_authority_uuid_attribute(uuid),
+                      get_ca_select_group_ra_profile_attribute(),
+                      get_template_name_ra_profile_attribute(templates)]
 
     return attribute_list
 
@@ -307,7 +310,7 @@ def get_server_attribute():
     server_regexp_constraint["type"] = "regExp"
     server_regexp_constraint["description"] = "Address of ADCS Server"
     server_regexp_constraint["errorMessage"] = "Enter Valid Address"
-    server_regexp_constraint["pattern"] = ("^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|"
+    server_regexp_constraint["data"] = ("^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|"
                                            "[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])|(([a-zA-Z0-9]|[a-zA-Z0-9]"
                                            "[a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9]"
                                            "[A-Za-z0-9\\-]*"
@@ -354,6 +357,72 @@ def get_winrm_port_attribute():
         {"reference": "5985", "data": "5985"},
     ]
     return winrm_port_attribute
+
+
+def get_select_ca_method_attribute():
+    select_ca_method_attribute = dict()
+    select_ca_method_attribute[NAME_ATTRIBUTE_PROPERTY] = SELECT_CA_METHOD_ATTRIBUTE_NAME
+    select_ca_method_attribute[UUID_ATTRIBUTE_PROPERTY] = SELECT_CA_METHOD_ATTRIBUTE_UUID
+    select_ca_method_attribute[TYPE_ATTRIBUTE_PROPERTY] = "data"
+    select_ca_method_attribute[CONTENT_TYPE_ATTRIBUTE_PROPERTY] = "string"
+    select_ca_method_attribute[DESCRIPTION_ATTRIBUTE_PROPERTY] = SELECT_CA_METHOD_ATTRIBUTE_DESCRIPTION
+    select_ca_method_attribute[PROPERTY_ATTRIBUTE_PROPERTY] = get_attribute_properties(
+        SELECT_CA_METHOD_ATTRIBUTE_LABEL,
+        is_required=True,
+        is_read_only=False,
+        is_visible=True,
+        is_list=True,
+        is_multi_select=False)
+    select_ca_method_attribute[CONTENT_ATTRIBUTE_PROPERTY] = [
+        {"reference": method.description, "data": method.method} for method in CaSelectMethod
+    ]
+    return select_ca_method_attribute
+
+
+def get_config_string_attribute():
+    computer_name_attribute = dict()
+    computer_name_attribute[NAME_ATTRIBUTE_PROPERTY] = CONFIGSTRING_ATTRIBUTE_NAME
+    computer_name_attribute[UUID_ATTRIBUTE_PROPERTY] = CONFIGSTRING_ATTRIBUTE_UUID
+    computer_name_attribute[TYPE_ATTRIBUTE_PROPERTY] = "data"
+    computer_name_attribute[CONTENT_TYPE_ATTRIBUTE_PROPERTY] = "string"
+    computer_name_attribute[DESCRIPTION_ATTRIBUTE_PROPERTY] = CONFIGSTRING_ATTRIBUTE_DESCRIPTION
+    computer_name_attribute[PROPERTY_ATTRIBUTE_PROPERTY] = get_attribute_properties(
+        CONFIGSTRING_ATTRIBUTE_LABEL,
+        is_required=False,
+        is_read_only=False,
+        is_visible=True,
+        is_list=False,
+        is_multi_select=False)
+    return computer_name_attribute
+
+
+def get_ca_select_group_attribute():
+    ca_select_group_attribute = dict()
+    ca_select_group_attribute[NAME_ATTRIBUTE_PROPERTY] = CA_SELECT_GROUP_ATTRIBUTE_NAME
+    ca_select_group_attribute[UUID_ATTRIBUTE_PROPERTY] = CA_SELECT_GROUP_ATTRIBUTE_UUID
+    ca_select_group_attribute[TYPE_ATTRIBUTE_PROPERTY] = "group"
+    ca_select_group_attribute_callback = {
+        "callbackContext": "/v1/discoveryProvider/caSelect/{ca_select_method}/{authority_instance_uuid}",
+        "callbackMethod": "GET",
+        "mappings": [
+            {
+                "from": "select_ca_method.data",
+                "to": "ca_select_method",
+                "targets": [
+                    "pathVariable"
+                ]
+            },
+            {
+                "from": "authority_instance.data.uuid",
+                "to": "authority_instance_uuid",
+                "targets": [
+                    "pathVariable"
+                ]
+            }
+        ]
+    }
+    ca_select_group_attribute[PROPERTY_ATTRIBUTE_CALLBACK] = ca_select_group_attribute_callback
+    return ca_select_group_attribute
 
 ################################################################
 # Discovery Attributes
@@ -411,7 +480,7 @@ def get_authority_instances_attribute(kind):
     return authority_instances_attribute
 
 
-def get_ca_name_attribute():
+def get_ca_name_attribute(ca_names):
     ca_name_attribute = dict()
     ca_name_attribute[NAME_ATTRIBUTE_PROPERTY] = CA_NAME_ATTRIBUTE_NAME
     ca_name_attribute[UUID_ATTRIBUTE_PROPERTY] = CA_NAME_ATTRIBUTE_UUID
@@ -425,19 +494,7 @@ def get_ca_name_attribute():
         is_visible=True,
         is_list=True,
         is_multi_select=True)
-    ca_name_attribute[PROPERTY_ATTRIBUTE_CALLBACK] = {
-        "callbackContext": "/v1/discoveryProvider/listCertificateAuthority/{authority_instance_uuid}",
-        "callbackMethod": "GET",
-        "mappings": [
-            {
-                "from": "authority_instance.data.uuid",
-                "to": "authority_instance_uuid",
-                "targets": [
-                    "pathVariable"
-                ]
-            }
-        ]
-    }
+    ca_name_attribute[CONTENT_ATTRIBUTE_PROPERTY] = ca_names
     return ca_name_attribute
 
 
@@ -512,6 +569,35 @@ def get_issued_days_before_attribute():
 ################################################################
 
 
+def get_ca_select_group_ra_profile_attribute():
+    ca_select_group_ra_profile_attribute = dict()
+    ca_select_group_ra_profile_attribute[NAME_ATTRIBUTE_PROPERTY] = CA_SELECT_GROUP_RA_PROFILE_ATTRIBUTE_NAME
+    ca_select_group_ra_profile_attribute[UUID_ATTRIBUTE_PROPERTY] = CA_SELECT_GROUP_RA_PROFILE_ATTRIBUTE_UUID
+    ca_select_group_ra_profile_attribute[TYPE_ATTRIBUTE_PROPERTY] = "group"
+    ca_select_group_ra_profile_attribute_callback = {
+        "callbackContext": "/v1/discoveryProvider/caSelect/{ca_select_method}/{authority_instance_uuid}",
+        "callbackMethod": "GET",
+        "mappings": [
+            {
+                "from": "select_ca_method.data",
+                "to": "ca_select_method",
+                "targets": [
+                    "pathVariable"
+                ]
+            },
+            {
+                "from": "authority_uuid.data",
+                "to": "authority_instance_uuid",
+                "targets": [
+                    "pathVariable"
+                ]
+            }
+        ]
+    }
+    ca_select_group_ra_profile_attribute[PROPERTY_ATTRIBUTE_CALLBACK] = ca_select_group_ra_profile_attribute_callback
+    return ca_select_group_ra_profile_attribute
+
+
 def get_ca_name_ra_profile_attribute(cas: List[AuthorityData]):
     ca_name_ra_profile_attribute = dict()
     ca_name_ra_profile_attribute[NAME_ATTRIBUTE_PROPERTY] = CA_NAME_RA_PROFILE_ATTRIBUTE_NAME
@@ -534,6 +620,26 @@ def get_ca_name_ra_profile_attribute(cas: List[AuthorityData]):
     return ca_name_ra_profile_attribute
 
 
+def get_authority_uuid_attribute(authority_uuid):
+    authority_uuid_attribute = dict()
+    authority_uuid_attribute[NAME_ATTRIBUTE_PROPERTY] = AUTHORITY_UUID_ATTRIBUTE_NAME
+    authority_uuid_attribute[UUID_ATTRIBUTE_PROPERTY] = AUTHORITY_UUID_ATTRIBUTE_UUID
+    authority_uuid_attribute[TYPE_ATTRIBUTE_PROPERTY] = "data"
+    authority_uuid_attribute[CONTENT_TYPE_ATTRIBUTE_PROPERTY] = "string"
+    authority_uuid_attribute[DESCRIPTION_ATTRIBUTE_PROPERTY] = AUTHORITY_UUID_ATTRIBUTE_DESCRIPTION
+    authority_uuid_attribute[PROPERTY_ATTRIBUTE_PROPERTY] = get_attribute_properties(
+        AUTHORITY_UUID_ATTRIBUTE_LABEL,
+        is_required=True,
+        is_read_only=False,
+        is_visible=False,
+        is_list=False,
+        is_multi_select=False)
+    authority_uuid_attribute[CONTENT_ATTRIBUTE_PROPERTY] = [
+        {"reference": authority_uuid, "data": authority_uuid}
+    ]
+    return authority_uuid_attribute
+
+
 def get_template_name_ra_profile_attribute(templates: List[TemplateData]):
     template_name_ra_profile_attribute = dict()
     template_name_ra_profile_attribute[NAME_ATTRIBUTE_PROPERTY] = TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME
@@ -543,7 +649,7 @@ def get_template_name_ra_profile_attribute(templates: List[TemplateData]):
     template_name_ra_profile_attribute[DESCRIPTION_ATTRIBUTE_PROPERTY] = TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_DESCRIPTION
     template_name_ra_profile_attribute[PROPERTY_ATTRIBUTE_PROPERTY] = get_attribute_properties(
         TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_LABEL,
-        is_required=False,
+        is_required=True,
         is_read_only=False,
         is_visible=True,
         is_list=True,

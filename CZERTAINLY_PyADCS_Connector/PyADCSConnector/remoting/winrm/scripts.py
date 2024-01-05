@@ -1,15 +1,24 @@
-from typing import List
-
 from PyADCSConnector.utils.dump_parser import AuthorityData, TemplateData
 from PyADCSConnector.utils.revocation_reason import CertificateRevocationReason
 
-IMPORT_MODULE = "Import-Module PSPKI"
+IMPORT_MODULE = """Import-Module PSPKI
+$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()"""
 
 
 def verify_connection_script():
+    """
+    Returns a script that verifies the connection to the remote server.
+    """
     return '\n'.join([
         IMPORT_MODULE,
-        "Get-CertificationAuthority | Ping-ICertInterface"
+        # "Get-CertificationAuthority | Ping-ICertInterface"
+    ])
+
+
+def get_ca_script(computer_name: str):
+    return '\n'.join([
+        IMPORT_MODULE,
+        "Get-CertificationAuthority -ComputerName " + computer_name + " | Format-List *",
     ])
 
 
@@ -46,7 +55,7 @@ def select_objects(command, property):
     return f"{command} | Select-Object -Property {properties}"
 
 
-def dump_certificates_script(ca: AuthorityData, template: TemplateData, issued_after, page, page_size):
+def dump_certificates_script(ca: AuthorityData, template: TemplateData or None, issued_after, page, page_size):
     commands = [IMPORT_MODULE]
     if issued_after:
         commands.append(f'$issued_after = Get-Date -Date "{issued_after}"')

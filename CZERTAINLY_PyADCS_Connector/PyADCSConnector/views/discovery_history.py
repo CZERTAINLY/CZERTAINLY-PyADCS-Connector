@@ -14,6 +14,7 @@ from PyADCSConnector.models.discovery_history import DiscoveryHistory
 from PyADCSConnector.remoting.winrm.scripts import get_cas_script, dump_certificates_script
 from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance
 from PyADCSConnector.utils import attribute_definition_utils
+from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.discovery_status import DiscoveryStatus
 from PyADCSConnector.utils.dump_parser import DumpParser, AuthorityData, TemplateData
 from PyADCSConnector.views.attributes import validate_kind, get_ca_name_metadata_attribute, \
@@ -38,7 +39,7 @@ def start_discovery(request, *args, **kwargs):
     # TODO: make running the discovery asynchronous
     # run_discovery(form, discovery_history)
 
-    Thread(target=run_discovery, args=(form, discovery_history), daemon=True).start()
+    Thread(target=run_discovery, args=(form, discovery_history.uuid), daemon=True).start()
 
     discovery_history_request = dict()
     discovery_history_request["name"] = form["name"]
@@ -85,9 +86,9 @@ def create_discovery_history(form):
 
 
 # Run certificate discovery asynchronously
-@transaction.atomic
-def run_discovery(form, discovery_history):
+def run_discovery(form, discovery_history_uuid):
     logger.debug("Starting discovery for %s in a new thread %s" % (form["name"], threading.get_ident()))
+    discovery_history = DiscoveryHistory.objects.get(uuid=discovery_history_uuid)
     try:
         discover_certificates(form, discovery_history)
     except Exception as e:
@@ -100,10 +101,31 @@ def run_discovery(form, discovery_history):
 def discover_certificates(form, discovery_history):
     logger.info("Starting discovery for %s" % form["name"])
 
+    select_ca_method = attribute_definition_utils.get_attribute_value(
+        SELECT_CA_METHOD_ATTRIBUTE_NAME, form["attributes"])
     authority_instance = AuthorityInstanceAttributeObject.from_dict(
         attribute_definition_utils.get_attribute_value(AUTHORITY_INSTANCE_ATTRIBUTE_NAME, form["attributes"]))
-    cas = AuthorityData.from_dicts(
-        attribute_definition_utils.get_attribute_value_list(CA_NAME_ATTRIBUTE_NAME, form["attributes"]))
+
+    authority = AuthorityInstance.objects.get(uuid=authority_instance.uuid)
+
+    if select_ca_method == CaSelectMethod.SEARCH.method:
+        cas = AuthorityData.from_dicts(
+            attribute_definition_utils.get_attribute_value_list(CA_NAME_ATTRIBUTE_NAME, form["attributes"]))
+    elif select_ca_method == CaSelectMethod.CONFIGSTRING.method:
+        config_string = attribute_definition_utils.get_attribute_value(
+            CONFIGSTRING_ATTRIBUTE_NAME, form["attributes"])
+        if not config_string:
+            raise Exception("ConfigString is required with selected CA Method: " + select_ca_method)
+        ca_name = config_string.split("\\")[1]
+        computer_name = config_string.split("\\")[0]
+        if not ca_name or not computer_name:
+            raise Exception("Wrong format of ConfigString: " + config_string)
+        cas = [AuthorityData(
+            config_string.split("\\")[1], config_string.split("\\")[1], config_string.split("\\")[0],
+            config_string, "", None, None)]
+    else:
+        raise Exception("Unknown CA Select Method: " + select_ca_method)
+
     templates = TemplateData.from_dicts(
         attribute_definition_utils.get_attribute_value_list(TEMPLATE_NAME_ATTRIBUTE_NAME, form["attributes"]))
     issued_after = attribute_definition_utils.get_attribute_value(ISSUED_AFTER_ATTRIBUTE_NAME, form["attributes"])
@@ -111,12 +133,12 @@ def discover_certificates(form, discovery_history):
     logger.debug("Authority instance: %s, CA names: %s, Template names: %s" %
                  (authority_instance, cas, templates))
 
-    authority = AuthorityInstance.objects.get(uuid=authority_instance.uuid)
-
     session = create_session_from_authority_instance(authority)
     session.connect()
 
     # if ca_names is empty, then get all CAs
+    # TODO: This operation may timeout if there are too many CAs, especially when their are not accessible,
+    #  it should be handled
     if not cas:
         result = session.run_ps(get_cas_script())
         cas = DumpParser.parse_authority_data(result)
