@@ -9,10 +9,8 @@ from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.remoting.winrm.scripts import verify_connection_script
 from PyADCSConnector.remoting.winrm_remoting import WinRmRemoting
 from PyADCSConnector.serializers.authority_instance_serializer import AuthorityInstanceSerializer
+from PyADCSConnector.services.attributes.authority_attributes import *
 from PyADCSConnector.utils import attribute_definition_utils
-from PyADCSConnector.views.attributes import get_attributes_list, get_winrm_transport_configuration_attributes_list, \
-    get_all_attributes_list
-from PyADCSConnector.views.constants import *
 
 
 class AuthorityInstanceAttributeObject:
@@ -89,19 +87,20 @@ def update_authority_instance(request, authority_instance):
     form = json.loads(request.body)
 
     request_attributes = form["attributes"]
-    authority_instance.transport = attribute_definition_utils.get_attribute_value(WINRM_TRANSPORT_ATTRIBUTE_NAME,
-                                                                                 request_attributes)
-    # original_attributes = (get_winrm_transport_configuration_attributes_list(authority_instance.kind, authority_instance.transport) +
-    #                        get_attributes_list(authority_instance.kind))
-    original_attributes = get_all_attributes_list(authority_instance.kind, authority_instance.transport)
+    authority_instance.transport = attribute_definition_utils.get_attribute_value(
+        AUTHORITY_WINRM_TRANSPORT_ATTRIBUTE_NAME,
+        request_attributes
+    )
+
+    original_attributes = get_all_authority_attributes_list(authority_instance.kind, authority_instance.transport)
     authority_instance.attributes = attribute_definition_utils.merge_attributes(request_attributes, original_attributes)
-    authority_instance.address = attribute_definition_utils.get_attribute_value(SERVER_ADDRESS_ATTRIBUTE_NAME,
+    authority_instance.address = attribute_definition_utils.get_attribute_value(AUTHORITY_SERVER_ADDRESS_ATTRIBUTE_NAME,
                                                                                 authority_instance.attributes)
-    authority_instance.https = attribute_definition_utils.get_attribute_value(USE_HTTPS_ATTRIBUTE_NAME,
-                                                                                  authority_instance.attributes)
-    authority_instance.port = attribute_definition_utils.get_attribute_value(WINRM_PORT_ATTRIBUTE_NAME,
+    authority_instance.https = attribute_definition_utils.get_attribute_value(AUTHORITY_USE_HTTPS_ATTRIBUTE_NAME,
+                                                                              authority_instance.attributes)
+    authority_instance.port = attribute_definition_utils.get_attribute_value(AUTHORITY_WINRM_PORT_ATTRIBUTE_NAME,
                                                                              authority_instance.attributes)
-    authority_instance.credential = attribute_definition_utils.get_attribute_value(CREDENTIAL_ATTRIBUTE_NAME,
+    authority_instance.credential = attribute_definition_utils.get_attribute_value(AUTHORITY_CREDENTIAL_ATTRIBUTE_NAME,
                                                                                    authority_instance.attributes)
 
     try:

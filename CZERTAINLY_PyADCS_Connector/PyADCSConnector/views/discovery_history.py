@@ -8,19 +8,18 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from CZERTAINLY_PyADCS_Connector.settings import ADCS_SEARCH_PAGE_SIZE
-from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.models.discovery_certificate import DiscoveryCertificate
 from PyADCSConnector.models.discovery_history import DiscoveryHistory
 from PyADCSConnector.remoting.winrm.scripts import get_cas_script, dump_certificates_script
 from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance
+from PyADCSConnector.services.attributes.discovery_attributes import *
+from PyADCSConnector.services.attributes.metadata_attributes import get_ca_name_metadata_attribute, \
+    get_template_name_metadata_attribute
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.discovery_status import DiscoveryStatus
 from PyADCSConnector.utils.dump_parser import DumpParser, AuthorityData, TemplateData
-from PyADCSConnector.views.attributes import validate_kind, get_ca_name_metadata_attribute, \
-    get_template_name_metadata_attribute
 from PyADCSConnector.views.authority_instance import AuthorityInstanceAttributeObject
-from PyADCSConnector.views.constants import *
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 @require_http_methods(["POST"])
 def start_discovery(request, *args, **kwargs):
     form = json.loads(request.body)
-    validate_kind(form["kind"])
+    validate_discovery_kind(form["kind"])
 
     if DiscoveryHistory.objects.filter(name=form["name"]).exists():
         return JsonResponse({"message": "Discovery with name %s already exists" % form["name"]}, status=400)
@@ -102,18 +101,18 @@ def discover_certificates(form, discovery_history):
     logger.info("Starting discovery for %s" % form["name"])
 
     select_ca_method = attribute_definition_utils.get_attribute_value(
-        SELECT_CA_METHOD_ATTRIBUTE_NAME, form["attributes"])
+        DISCOVERY_SELECT_CA_METHOD_ATTRIBUTE_NAME, form["attributes"])
     authority_instance = AuthorityInstanceAttributeObject.from_dict(
-        attribute_definition_utils.get_attribute_value(AUTHORITY_INSTANCE_ATTRIBUTE_NAME, form["attributes"]))
+        attribute_definition_utils.get_attribute_value(DISCOVERY_AUTHORITY_INSTANCE_ATTRIBUTE_NAME, form["attributes"]))
 
     authority = AuthorityInstance.objects.get(uuid=authority_instance.uuid)
 
     if select_ca_method == CaSelectMethod.SEARCH.method:
         cas = AuthorityData.from_dicts(
-            attribute_definition_utils.get_attribute_value_list(CA_NAME_ATTRIBUTE_NAME, form["attributes"]))
+            attribute_definition_utils.get_attribute_value_list(DISCOVERY_CA_NAME_ATTRIBUTE_NAME, form["attributes"]))
     elif select_ca_method == CaSelectMethod.CONFIGSTRING.method:
         config_string = attribute_definition_utils.get_attribute_value(
-            CONFIGSTRING_ATTRIBUTE_NAME, form["attributes"])
+            DISCOVERY_CONFIGSTRING_ATTRIBUTE_NAME, form["attributes"])
         if not config_string:
             raise Exception("ConfigString is required with selected CA Method: " + select_ca_method)
         ca_name = config_string.split("\\")[1]
@@ -127,8 +126,8 @@ def discover_certificates(form, discovery_history):
         raise Exception("Unknown CA Select Method: " + select_ca_method)
 
     templates = TemplateData.from_dicts(
-        attribute_definition_utils.get_attribute_value_list(TEMPLATE_NAME_ATTRIBUTE_NAME, form["attributes"]))
-    issued_after = attribute_definition_utils.get_attribute_value(ISSUED_AFTER_ATTRIBUTE_NAME, form["attributes"])
+        attribute_definition_utils.get_attribute_value_list(DISCOVERY_TEMPLATE_NAME_ATTRIBUTE_NAME, form["attributes"]))
+    issued_after = attribute_definition_utils.get_attribute_value(DISCOVERY_ISSUED_AFTER_ATTRIBUTE_NAME, form["attributes"])
 
     logger.debug("Authority instance: %s, CA names: %s, Template names: %s" %
                  (authority_instance, cas, templates))
