@@ -59,7 +59,7 @@ def dump_certificates_script(ca: AuthorityData, template: TemplateData or None, 
     commands = [IMPORT_MODULE]
     if issued_after:
         commands.append(f'$issued_after = Get-Date -Date "{issued_after}"')
-    base_cmd = (f'Get-CertificationAuthority -Name "{ca.name}" | Get-IssuedRequest -Property "RawCertificate"'
+    base_cmd = (f'Get-CertificationAuthority -Name "{ca.name}" | Get-AdcsDatabaseRow -Property "RawCertificate"'
                 f' -Page {page} -PageSize {page_size} -Filter "Request.Disposition -ge 12",'
                 f' "Request.Disposition -le 21"')
     if not template:
@@ -100,7 +100,12 @@ def get_template_oid_script(template):
 def identify_certificate_script(serial_number, ca: AuthorityData):
     return '\n'.join([
         IMPORT_MODULE,
-        f"Get-CertificationAuthority -Name \"{ca.name}\" | Get-IssuedRequest -Filter \"SerialNumber -eq {serial_number}\""
+        f'Get-CertificationAuthority -Name "{ca.name}" | Get-AdcsDatabaseRow'
+        f' -Filter "SerialNumber -eq {serial_number}", "Request.Disposition -ge 12", "Request.Disposition -le 21"'
+        f' -Property "SerialNumber", "CertificateTemplate", "ConfigString"'
+        # getting only issued requests without revoked ones
+        # f'Get-CertificationAuthority -Name "{ca.name}" | Get-IssuedRequest'
+        # f' -Filter "SerialNumber -eq {serial_number}"'
     ])
 
 

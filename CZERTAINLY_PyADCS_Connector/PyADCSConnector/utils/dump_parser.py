@@ -100,11 +100,11 @@ class DumpParser:
         for line in lines:
             if in_cert and line.startswith("                         "):
                 cert.append(line.strip())
-            elif line.startswith("CertificateTemplate    : "):
+            elif line.startswith("CertificateTemplate        : "):
                 template = DumpParser.parse_template_name(line)
-            elif line.startswith("RawCertificate         : "):
+            elif line.startswith("RawCertificate             : "):
                 # first line
-                cert.append(line.replace("RawCertificate         : ", "").strip())
+                cert.append(line.replace("RawCertificate             : ", "").strip())
                 in_cert = True
             else:
                 if in_cert:
@@ -127,12 +127,12 @@ class DumpParser:
         config_string = ""
 
         for line in lines:
-            if line.startswith("SerialNumber           :"):
-                serial_number = line.replace("SerialNumber           :", "").strip()
-            elif line.startswith("CertificateTemplate    : "):
-                certificate_template = line.replace("CertificateTemplate    : ", "").strip()
-            elif line.startswith("ConfigString           : "):
-                config_string = line.replace("ConfigString           : ", "").strip()
+            if line.startswith("SerialNumber               : "):
+                serial_number = line.replace("SerialNumber               : ", "").strip()
+            elif line.startswith("CertificateTemplate        : "):
+                certificate_template = line.replace("CertificateTemplate        : ", "").strip()
+            elif line.startswith("ConfigString               : "):
+                config_string = line.replace("ConfigString               : ", "").strip()
                 complete_record = True
 
             if complete_record:
@@ -146,7 +146,7 @@ class DumpParser:
 
     @staticmethod
     def parse_template_name(line):
-        return line.replace("CertificateTemplate    : ", "").strip()
+        return line.replace("CertificateTemplate        : ", "").strip()
 
     @staticmethod
     def parse_template_data(input_data):

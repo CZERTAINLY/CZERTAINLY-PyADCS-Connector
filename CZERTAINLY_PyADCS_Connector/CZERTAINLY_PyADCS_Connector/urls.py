@@ -55,7 +55,7 @@ urlpatterns = [
     path("v2/authorityProvider/authorities/<str:uuid>/certificates/revoke",
          certificate_management.revoke_certificate),
     path("v2/authorityProvider/authorities/<str:uuid>/certificates/identify",
-         certificate_management.identify),
+         certificate_management.identify_certificate),
 
     # Discovery interfaces
     path("v1/discoveryProvider/<str:kind>/attributes", attributes.get_discovery_attributes),

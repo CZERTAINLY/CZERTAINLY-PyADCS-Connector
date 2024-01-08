@@ -8,134 +8,135 @@ class DumpParserTest(TestCase):
     def test_parse_certificates(self):
         data = """
 
-RequestID              : 92
-Request.RequesterName  : 3KEY\\nejaky.uzivatel
-CommonName             : stolin.cloudfield.cz
-NotBefore              : 9/14/2021 10:29:04 AM
-NotAfter               : 9/14/2023 10:29:04 AM
-SerialNumber           : 180000005c361831d4fb7ac06f00000000005c
-CertificateTemplate    : WebServer
-RawCertificate         : MIIFqjCCA5KgAwIBAgITGAAAAFw2GDHU+3rAbwAAAAAAXDANBgkqhkiG9w0BAQ0F
-                         ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
-                         YW55IHMuci5vLjAeFw0yMTA5MTQxMDI5MDRaFw0yMzA5MTQxMDI5MDRaMIGvMQsw
-                         CQYDVQQGEwJjejEXMBUGA1UECBMOY3plY2ggcmVwdWJsaWMxFzAVBgNVBAcTDmhS
-                         +aXRHaOZLWSfI96whFyOlSUbjFA/wfaM8QOFGEo6iInENJaT7c7nsL61/tGna8wT
-                         1aMeYm314Hw3kyWRXbcFogODKrGlUDFfLgiZ1+7qIIYvRw0b0CUABz8kzgloF3kY
-                         ez76He+xnDn84MozAhzO0dch2Db8IarlAf237SLNE6PWho0h0yOjkfur3dV5YWg3
-                         fcF9OHcKpdEDR0Ne6tLiTOcCh1WTCw8ZcbP6ojbnmaZhsWo7uMxaLeCF8/dNOcI6
-                         5D+2iXCq7fXq0hPbTdw=
-
-CertificateTemplateOid : WebServer
-RowId                  : 92
-ConfigString           : vmi307469.3key.local\\Demo MS Sub CA
-Table                  : Request
-Properties             : {[RequestID, 92], [Request.RequesterName, 3KEY\\nejaky.uzivatel], [CommonName,
-                         stolin.cloudfield.cz], [NotBefore, 9/14/2021 10:29:04 AM]...}
-
-RequestID              : 93
-Request.RequesterName  : 3KEY\\nejaky.uzivatel
-CommonName             : stolin.cloudfield.cz
-NotBefore              : 9/14/2021 10:31:55 AM
-NotAfter               : 9/14/2023 10:31:55 AM
-SerialNumber           : 180000005da983bee662f1644000000000005d
-CertificateTemplate    : WebServer
-RawCertificate         : MIIFqjCCA5KgAwIBAgITGAAAAF2pg77mYvFkQAAAAAAAXTANBgkqhkiG9w0BAQ0F
-                         ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
-                         YW55IHMuci5vLjAeFw0yMTA5MTQxMDMxNTVaFw0yMzA5MTQxMDMxNTVaMIGvMQsw
-                         CQYDVQQGEwJjejEXMBUGA1UECBMOY3plY2ggcmVwdWJsaWMxFzAVBgNVBAcTDmhS
-                         QURFQyBrUkFMT1ZFMRMwEQYDVQQKEwpjbG91ZGZpZWxkMQ4wDAYDVQQLEwVhenVy
-                         ZTEdMBsGA1UEAxMUc3RvbGluLmNsb3VkZmllbGQuY3oxKjAoBgkqhkiG9w0BCQEW
-                         G3ZhY2xhdi5zdG9saW5AY2xvdWRmaWVsZC5jejCCASIwDQYJKoZIhvcNAQEBBQAD
-                         ggEPADCCAQoCggEBAMKNY2L7xt4+PpiDk1DDXgN6fgSAXoAmepEEKhju6zezxlbq
-                         jKaVLYnvBz1UV2m2Gwf+uLv+ZhmGj5tA/Q8VN4ltop0X5JG05q2Dowot3ShE/kVg
-                         WAG1ckjNcJIj9kKZPpLjLYitFzVWzacAQn0NpJNYKu0gL7vizPZsBvlsB1V4MZjt
-                         1cyM5fFt1CWUB/eo7GQ5Hp1h1x3oH0k7CzFDVd91nVXxEuqPQZeusVsr9bQdrUbS
-                         Yp/urn13flx6r29Ff9JZOdUGD5g9Mw2IrRXkMcmnEfkMSbBbAwccImkuQ8bCuHCD
-                         oMS/90/d7jDxGvB5wgZiD188VsoNj3G80VXfPUARCbmLkoA74vrt9sj4w/Sh2VAQ
-                         XNhyT45tc2eaCNyxFqhr0wiIrfyI7K/sfRg8VtQf0C07gjMcmomREfFwczfvLfIx
-                         GuzgIV7fd/1dMh2OsYM=
-
-CertificateTemplateOid : WebServer
-RowId                  : 93
-ConfigString           : vmi307469.3key.local\\Demo MS Sub CA
-Table                  : Request
-Properties             : {[RequestID, 93], [Request.RequesterName, 3KEY\\nejaky.uzivatel], [CommonName,
-                         stolin.cloudfield.cz], [NotBefore, 9/14/2021 10:31:55 AM]...}
-
-RequestID              : 94
-Request.RequesterName  : 3KEY\\nejaky.uzivatel
-CommonName             : stolin.cloudfield.cz
-NotBefore              : 9/14/2021 10:33:10 AM
-NotAfter               : 9/14/2023 10:33:10 AM
-SerialNumber           : 180000005e2eaba4393d43d5dd00000000005e
-CertificateTemplate    : WebServer
-RawCertificate         : MIIFqjCCA5KgAwIBAgITGAAAAF4uq6Q5PUPV3QAAAAAAXjANBgkqhkiG9w0BAQ0F
-                         ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
-                         YW55IHMuci5vLjAeFw0yMTA5MTQxMDMzMTBaFw0yMzA5MTQxMDMzMTBaMIGvMQsw
-                         CQYDVQQGEwJjejEXMBUGA1UECBMOY3plY2ggcmVwdWJsaWMxFzAVBgNVBAcTDmhS
-                         QURFQyBrUkFMT1ZFMRMwEQYDVQQKEwpjbG91ZGZpZWxkMQ4wDAYDVQQLEwVhenVy
-                         kNTOeq3IxCaLiQfu4aFlHgfkp7IcRtnf9x6tBkqbpB8wfwDRig+ueMoOdbeeNdIm
-                         jNMj7SVQVjtU4PO47bmATcbqh7SaBzm6YHUitQqaeNJezRQN0KOb4McewCGavrgT
-                         aGT/36EI1I1pXEXieMwVmp1gWp2AnhIVcZzeQyz12W1S3Pvade1soJlPqodcF1kB
-                         7cyrotkTwFhd4BcaO38=
-
-CertificateTemplateOid : WebServer
-RowId                  : 94
-ConfigString           : vmi307469.3key.local\\Demo MS Sub CA
-Table                  : Request
-Properties             : {[RequestID, 94], [Request.RequesterName, 3KEY\\nejaky.uzivatel], [CommonName,
-                         stolin.cloudfield.cz], [NotBefore, 9/14/2021 10:33:10 AM]...}
-
-RequestID              : 95
-Request.RequesterName  : 3KEY\\nejaky.uzivatel
-CommonName             : stolin.cloudfield.cz
-NotBefore              : 9/14/2021 10:39:04 AM
-NotAfter               : 9/14/2023 10:39:04 AM
-SerialNumber           : 180000005fa28c539c099024c900000000005f
-CertificateTemplate    : WebServer
-RawCertificate         : MIIFqjCCA5KgAwIBAgITGAAAAF+ijFOcCZAkyQAAAAAAXzANBgkqhkiG9w0BAQ0F
-                         ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
-                         YW55IHMuci5vLjAeFw0yMTA5MTQxMDM5MDRaFw0yMzA5MTQxMDM5MDRaMIGvMQsw
-                         W8ZsV0D44UenisPFKhNes5FDRw3GvEwkCoizlrBGpgSkPLg/9BeJb3cVp7ikjN5C
-                         sLX+nsMxz7LGZeHlbae5FPgDjiee01Z/GZp/MJAufa9xE/WkurljivuyAdUS0oft
-                         53roGPhlRx1mzff0cYZz0LmXeJnxPAFoS4rlLl+p0OiJ1EJ6KWo/yngu54AI5ja9
-                         v4QNdaSxYWL2S//baU1UvjLL+mDxeVNOK2lLUhWwbyLDLrHIn5L60itVv9z9m94X
-                         XPQ/raOMDWoUaG9bZ7Yz3Gb3heNB4K21jv7NEYy19mrJahKpVd/Na0/a8OrLIcPV
-                         WrV0f4o6nCLtsSc1WL8=
-
-CertificateTemplateOid : WebServer
-RowId                  : 95
-ConfigString           : vmi307469.3key.local\\Demo MS Sub CA
-Table                  : Request
-Properties             : {[RequestID, 95], [Request.RequesterName, 3KEY\\nejaky.uzivatel], [CommonName,
-                         stolin.cloudfield.cz], [NotBefore, 9/14/2021 10:39:04 AM]...}
-
-RequestID              : 96
-Request.RequesterName  : 3KEY\\nejaky.uzivatel
-CommonName             : stolin.cloudfield.cz
-NotBefore              : 9/14/2021 1:36:34 PM
-NotAfter               : 9/14/2023 1:36:34 PM
-SerialNumber           : 180000006065ba635752f7471d000000000060
-CertificateTemplate    : WebServer
-RawCertificate         : MIIFqjCCA5KgAwIBAgITGAAAAGBlumNXUvdHHQAAAAAAYDANBgkqhkiG9w0BAQ0F
-                         ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
-                         YW55IHMuci5vLjAeFw0yMTA5MTQxMzM2MzRaFw0yMzA5MTQxMzM2MzRaMIGvMQsw
-                         Vxmyiue5YialdjgJaF8tw25Z/kYtPWugAdmiPQokL1OAAxstMGxaQ9E6UkkA274S
-                         bF0jZPGX9gmL4fZYh9zN2kg8JinkcP5013OYFuF83GRjB1o59rH5lZPufBIjQt8j
-                         mE3bzH6yEgFOBjSAfpc=
-
-CertificateTemplateOid : WebServer
-RowId                  : 96
-ConfigString           : vmi307469.3key.local\\Demo MS Sub CA
-Table                  : Request
-Properties             : {[RequestID, 96], [Request.RequesterName, 3KEY\\nejaky.uzivatel], [CommonName,
-                         stolin.cloudfield.cz], [NotBefore, 9/14/2021 1:36:34 PM]...}
+RequestID                  : 787
+Request.StatusCode         : 0
+Request.DispositionMessage : Issued
+Request.RequesterName      : 3KEY\\VMI307469$
+Request.SubmittedWhen      : 12/28/2023 12:26:31 PM
+Request.CommonName         : lab02.3key.company
+CertificateTemplate        : WebServer
+RawCertificate             : MIIFNjCCAx6gAwIBAgITGAAAAxP9YXII0BMNqQAAAAADEzANBgkqhkiG9w0BAQ0F
+                             ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
+                             YW55IHMuci5vLjAeFw0yMzEyMjgxMjE2MzFaFw0yNTEyMjcxMjE2MzFaMB0xGzAZ
+                             BgNVBAMTEmxhYjAyLjNrZXkuY29tcGFueTCCASIwDQYJKoZIhvcNAQEBBQADggEP
+                             ADCCAQoCggEBAK5b2H5I8iJOYNxWSRah3rDUz9BPjADu2OjvlNhqJqJ3vFNyPlms
+                             GHmtWb1SvQAjZGRdIF+hC1YSchs/u4mq5XxBMCjI6b9Ne2o8slkDobDaHhwAJCRt
+                             9RuVr+goVIM+WovNEexlgK/7fScV9Nej0+pzu0tT1vIwiZU81O12ebg3Lg7LaLsM
+                             91Vefhs8Tc+tF8hfnvZ2ywWCEvx0kQD8OP6bjhoVOe/hgx9bhksI0aJg7db1dbLC
+                             sbr/z6vOEj3E7jH1zxNQ6iPQ3sPvaf/+kCHOSoJjpImkQiq0evYCdeSR/NNTc+Hq
+                             b3tcYVIBhQI2dgbj1c9xe4omyp7F3XJZdj0CAwEAAaOCAVMwggFPMCEGCSsGAQQB
+                             gjcUAgQUHhIAVwBlAGIAUwBlAHIAdgBlAHIwEwYDVR0lBAwwCgYIKwYBBQUHAwEw
+                             DgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBTcDLXCwo8HCKLOPY2JKoDIzgjZ7zAd
+                             BgNVHREEFjAUghJsYWIwMi4za2V5LmNvbXBhbnkwHwYDVR0jBBgwFoAUksK831XF
+                             wZOFSQf3rMkdC2gBB1EwTQYDVR0fBEYwRDBCoECgPoY8aHR0cDovL2xhYjAyLjNr
+                             ZXkuY29tcGFueS9jcmxzL2RlbW8vRGVtbyUyME1TJTIwU3ViJTIwQ0EuY3JsMFcG
+                             CCsGAQUFBwEBBEswSTBHBggrBgEFBQcwAYY7aHR0cDovL2xhYjAyLjNrZXkuY29t
+                             cGFueS9jYXMvZGVtby9EZW1vJTIwTVMlMjBTdWIlMjBDQS5jcnQwDQYJKoZIhvcN
+                             AQENBQADggIBALAVZ8r9Z6lDmiui3FhD3RdfghLENLUB+SBbDtDNg/+udKFLdU7l
+                             eaew2pPi/SoPFZOMKAW5lC5Iq0MXCeppTe/gvE6Q8+doJ6RqEQwtpSYkG3zZjnEX
+                             qYoeWBu0QFIYueuYlvPret3t8whTZt32wCDPyOp6ks1jDa2WMRKge+1xs4bBUFBn
+                             wMqlifBUf9ulNlaVTW0Y32zluqlGiKnbrHSveJ3TBUbG7sbqhQ6XB1AfZIwCK5JQ
+                             yLI3WAnNr1ziFlvERZzYrYDHviBYtdOZgp+ttmeT3XddrMXliklRGQ5Rl9O8EL5T
+                             Dg9ViXM3PH04g6Ce84oJXevy7Ohxdok7JvdKA74fsfbRYM6ZP5AftXt3apmF0GoO
+                             gbU7Y9z9q+7w++BX0e61cNdmHGOpxZa7OKLGhNel86lVgPeggY+PdYyfp+18v3je
+                             /0z5vHR3pmcBqbrYP0JZj/XHVYNyXTf6ba2I/xiABTux/ntQIVbKHZTT/oVwuYa6
+                             ISCJ9GKFKoB1u3MmDx2zAHESaTJmrAQZc259cCnUuboR37L83v00Px6MfAmo8yfX
+                             n65WTcqigQBOfWCOlJsRKS+q56+zRTotSxTaBQbnsloCS8Xw9x9pHfWRk5x6A5ew
+                             k+c+s1LmTHr6WQF7NlwiG1rQ859i2hw7Fnlxd/2ro25EfD79Q55ZOU6H
+                             
+CertificateTemplateOid     : WebServer
+RowId                      : 787
+ConfigString               : vmi307469.3key.local\\Demo MS Sub CA
+Table                      : Request
+Properties                 : {[RequestID, 787], [Request.StatusCode, 0], [Request.DispositionMessage, Issued], 
+                             [Request.RequesterName, 3KEY\\VMI307469$]...}
+RequestID                  : 788
+Request.StatusCode         : 0
+Request.DispositionMessage : Revoked by 3KEY\\nejaky.uzivatel
+Request.RequesterName      : 3KEY\\nejaky.uzivatel
+Request.SubmittedWhen      : 12/30/2023 2:17:34 PM
+Request.CommonName         : signserver-ra-01
+CertificateTemplate        : WebServer
+RawCertificate             : MIIFFTCCAv2gAwIBAgITGAAAAxSPMU0RrjbifAAAAAADFDANBgkqhkiG9w0BAQ0F
+                             ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
+                             YW55IHMuci5vLjAeFw0yMzEyMzAxNDA3MzRaFw0yNTEyMjkxNDA3MzRaMBsxGTAX
+                             BgNVBAMTEHNpZ25zZXJ2ZXItcmEtMDEwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+                             ggEKAoIBAQCgyWCtOYPVN45+tIyWg1bkTtVHew5dtAV6cJkHnfTYFo0MFMIs0US1
+                             DnSZmMZUaUL73Ic6M9YDmsSdjEh4BiwJIBmKSy6lkg0lxOEzqYmu0K0YEBm3JjMY
+                             l/fkPl+bre28xY5a9U5f1l3BVufxdR1+h7dlnSyaDMp2b8CqD3icr+4LO2HzOpwS
+                             FlrMPuPf+uM58G2GeQsnePjxyDaRfIO58v064AcqB8OPLBq34J4D15RsGz5HtS9Y
+                             RWSrzy0HFt3ipHzcaUucLnVTBeYpZKBl64+k4LAYINNq8hsb9TbVdvu8f3d1fXdB
+                             32DJduOfnUBPB/Hz3sktPd/77i67FUoPAgMBAAGjggE0MIIBMDAdBgNVHQ4EFgQU
+                             +/jrrO9jvD3ecJdurHKYa83v/MYwHwYDVR0jBBgwFoAUksK831XFwZOFSQf3rMkd
+                             C2gBB1EwTQYDVR0fBEYwRDBCoECgPoY8aHR0cDovL2xhYjAyLjNrZXkuY29tcGFu
+                             eS9jcmxzL2RlbW8vRGVtbyUyME1TJTIwU3ViJTIwQ0EuY3JsMFcGCCsGAQUFBwEB
+                             BEswSTBHBggrBgEFBQcwAYY7aHR0cDovL2xhYjAyLjNrZXkuY29tcGFueS9jYXMv
+                             ZGVtby9EZW1vJTIwTVMlMjBTdWIlMjBDQS5jcnQwIQYJKwYBBAGCNxQCBBQeEgBX
+                             AGUAYgBTAGUAcgB2AGUAcjAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYB
+                             BQUHAwEwDQYJKoZIhvcNAQENBQADggIBAMS6CoozrYDB0EBstl7lJiCK4ki6Ixpl
+                             HCJZCQRatyMvUu48/cTDwPz+nNsDFuO691+6R3f0RJ5gsvtLyP0l+/h0IuK7DMOa
+                             Tx8/k8xaHh5LXGcmkr5JREXgCqq35kImWfprsNEZ7HBDT24WmTedhy3L61igwlOY
+                             82f1IA3ZAZ/jyoOnRV0mo1xmzyvUQ0WWlprGFeeE5YymaZeCWpLDdhrwOPP9iFcf
+                             pNXc+mlPdG4NXUA+BKzZ0pM0J7VnSr9Vbnk6iSzAQFCEQFDee7v7gJr6tzpmoSWR
+                             QUghA0cVlKg9ETx0jor+Uv6nJqPW/nusfn7Nx0sX/Ieh+At6OXa5wXJ09Y6GAz64
+                             qudqBskp5mMtxFocmG6nHseo9wA3W8bQaoJYW+yyOqQhRGd1BuCsLYLR/M1n76of
+                             ANSC3ZRkWdImsGZbqrCB5CcjOG9VTbVkO+O1kCp9uu0AALp+87firfOG7ggVWWkx
+                             sCL0PuR/QuWlXsXSh2qFx/2MF/834tCRozbAOlBhY3WAzesvsBpZtEI/nkZSWe7a
+                             kDY6gmYk71kjmKqxrw8CIzDVa+pWe6/TuMuwnVUttLOLsu7rSY26pBte8sMtf+Gn
+                             yXmIwqYWDUtjhA7tjE1gtVK19z3MKUQg0zPTcphikOcxps+nVrUNvzCS6/Mnu88l
+                             yR3kZc7dtNpz
+                             
+CertificateTemplateOid     : WebServer
+RowId                      : 788
+ConfigString               : vmi307469.3key.local\\Demo MS Sub CA
+Table                      : Request
+Properties                 : {[RequestID, 788], [Request.StatusCode, 0], [Request.DispositionMessage, Revoked by 
+                             3KEY\\nejaky.uzivatel], [Request.RequesterName, 3KEY\\nejaky.uzivatel]...}
+RequestID                  : 789
+Request.StatusCode         : 0
+Request.DispositionMessage : Issued
+Request.RequesterName      : 3KEY\\nejaky.uzivatel
+Request.SubmittedWhen      : 12/31/2023 9:33:55 AM
+Request.CommonName         : testpy
+CertificateTemplate        : WebServer
+RawCertificate             : MIIEhzCCAm+gAwIBAgITGAAAAxVSi91EVbaymgAAAAADFTANBgkqhkiG9w0BAQ0F
+                             ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
+                             YW55IHMuci5vLjAeFw0yMzEyMzEwOTIzNTVaFw0yNTEyMzAwOTIzNTVaMBExDzAN
+                             BgNVBAMTBnRlc3RweTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAtKU1kDjC
+                             x9U8bN+YY6CKI9mkxd1K7Z7K6gbcyIJ1pC+M53ONRe59p2JD9zfgJRbkQTilzffO
+                             hfmFebEMq0Lt0OJdP1TOD9BtlA3Sc0QVKya46JfpEY8oYHq05JDV/kMQWaJPiDhk
+                             6/m6hzQx8egKcv/8G4dvHBcDOfuY28cldAECAwEAAaOCATQwggEwMB0GA1UdDgQW
+                             BBQKmJn706mQCPOnGyC6I/oHUMBf5jAfBgNVHSMEGDAWgBSSwrzfVcXBk4VJB/es
+                             yR0LaAEHUTBNBgNVHR8ERjBEMEKgQKA+hjxodHRwOi8vbGFiMDIuM2tleS5jb21w
+                             YW55L2NybHMvZGVtby9EZW1vJTIwTVMlMjBTdWIlMjBDQS5jcmwwVwYIKwYBBQUH
+                             AQEESzBJMEcGCCsGAQUFBzABhjtodHRwOi8vbGFiMDIuM2tleS5jb21wYW55L2Nh
+                             cy9kZW1vL0RlbW8lMjBNUyUyMFN1YiUyMENBLmNydDAhBgkrBgEEAYI3FAIEFB4S
+                             AFcAZQBiAFMAZQByAHYAZQByMA4GA1UdDwEB/wQEAwIFoDATBgNVHSUEDDAKBggr
+                             BgEFBQcDATANBgkqhkiG9w0BAQ0FAAOCAgEAmXVJl3otyFcoUrr/UhjBJXmpg+iv
+                             tRLhDKPoVSKbMCSY2tBSGeQ9V3kE5+KQI+om1plTXKQBgHaFOGamq3K1DytjEJuK
+                             TkwmWU4QVmkCYwv1qYEMQ5gqGWU1BDhuS43Q5oTR7Hv2G/dGxGaZDNycXE5aT/7T
+                             X7KJlIL5bC63i0ng2NVjhgqmHLRP48K0T8e3sX0jRRDKbpAVY04VBOv4WSr6M7sn
+                             Ib626eXEs96JgKnRp6wIJRwvbaBJdfJZpFBmBwTBzPjmNt+29+IDYHt3rQOA46Dg
+                             SEKTOwptKgZzXHig1kVtM/8eebyIV8wls5HwOfQ2VTc/uPjrouD9SAW76wQLjvZd
+                             14py+SafebFvEch//4QJhrPqYV5i7X3naFEIbtosDCvocT3eqq2FgWQAKzg84UJR
+                             3bo6n5mWXIDoWwxdTdrbzxmYkPbIZpiGJhtHIbYJpxZHrbH7pma43Rtoo2PPXnl6
+                             ORaTIFdYcOmff11foa/8QbyzgNSzDlxeUcbKaS/vjiPgY+/QPsc7KUVTVbrd3jIB
+                             sc8BgWEMXzIEqBGZixNnJrpavZW9u9E2AhhztUjGd84Ok77bUeCgE620NyKrIZOx
+                             F4D6SjYGvPiXdWEkVWKVYO6ego/GSYEzzFqwKWnp+EDnaj+8Vjc3LYD01WtPucDz
+                             BkciW85+HYbHuwE=
+                             
+CertificateTemplateOid     : WebServer
+RowId                      : 789
+ConfigString               : vmi307469.3key.local\\Demo MS Sub CA
+Table                      : Request
+Properties                 : {[RequestID, 789], [Request.StatusCode, 0], [Request.DispositionMessage, Issued], 
+                             [Request.RequesterName, 3KEY\\nejaky.uzivatel]...}
 
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
         templates = DumpParser.parse_certificates(result)
-        self.assertEqual(len(templates), 5)
+        self.assertEqual(len(templates), 3)
         self.assertEqual(templates[0].template, "WebServer")
 
     def test_parse_template(self):
@@ -185,30 +186,28 @@ OID           : 1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.20
     def test_parse_identified_certificates(self):
         data = """
 
-RequestID              : 710
-Request.RequesterName  : 3KEY\\nejaky.uzivatel
-CommonName             : Users
-                         Nějaký Uživatel
-NotBefore              : 7/7/2023 9:25:52 AM
-NotAfter               : 7/6/2024 9:25:52 AM
-SerialNumber           : 18000002c69a773092830df76a0000000002c6
-CertificateTemplate    : 1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.2517003.8444064
-CertificateTemplateOid : Certificate authentication external client
-                         (1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.2517003.8444064)
-RowId                  : 710
-ConfigString           : vmi307469.3key.local\\Demo MS Sub CA
-Table                  : Request
-Properties             : {[RequestID, 710], [Request.RequesterName, 3KEY\\nejaky.uzivatel], [CommonName, Users
-                         Nějaký Uživatel], [NotBefore, 7/7/2023 9:25:52 AM]...}
+RequestID                  : 810
+Request.StatusCode         : 0
+Request.DispositionMessage : Issued
+Request.RequesterName      : 3KEY\\nejaky.uzivatel
+Request.SubmittedWhen      : 1/8/2024 4:56:32 PM
+Request.CommonName         : signserver-ra-01
+CertificateTemplate        : WebServer
+SerialNumber               : 180000032a9a1aac7197589cef00000000032a
+CertificateTemplateOid     : WebServer
+RowId                      : 810
+ConfigString               : vmi307469.3key.local\\Demo MS Sub CA
+Table                      : Request
+Properties                 : {[RequestID, 810], [Request.StatusCode, 0], [Request.DispositionMessage, Issued], 
+                             [Request.RequesterName, 3KEY\\nejaky.uzivatel]...}
 
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
         templates = DumpParser.parse_identified_certificates(result)
         self.assertEqual(len(templates), 1)
-        self.assertEqual(templates[0].certificate_template, "1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353"
-                                                            ".10624234.204.2517003.8444064")
-        self.assertEqual(templates[0].serial_number, "18000002c69a773092830df76a0000000002c6")
+        self.assertEqual(templates[0].certificate_template, "WebServer")
+        self.assertEqual(templates[0].serial_number, "180000032a9a1aac7197589cef00000000032a")
         self.assertEqual(templates[0].config_string, "vmi307469.3key.local\\Demo MS Sub CA")
 
     def test_parse_authority_data(self):
