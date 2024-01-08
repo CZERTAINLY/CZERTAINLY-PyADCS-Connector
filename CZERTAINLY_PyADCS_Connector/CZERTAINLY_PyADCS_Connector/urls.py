@@ -24,17 +24,20 @@ urlpatterns = [
     path("v1/health", health.get_health),
 
     # Attributes interfaces
-    path("v1/authorityProvider/<str:kind>/attributes", attributes.get_attributes, name="get_attributes"),
-    path("v1/authorityProvider/<str:kind>/attributes/validate", attributes.validate_attributes),
+    path("v1/authorityProvider/<str:kind>/attributes",
+         attributes.get_authority_attributes),
+    path("v1/authorityProvider/<str:kind>/attributes/validate",
+         attributes.validate_authority_attributes),
 
     # Authority management interfaces
-    path("v1/authorityProvider/authorities", authority_instance.authority_operations),
-    path("v1/authorityProvider/authorities/<str:uuid>", authority_instance.authority_instance_operations),
-    path("v1/authorityProvider/authorities/<str:uuid>/raProfile/attributes", attributes.get_raprofile_attributes),
+    path("v1/authorityProvider/authorities",
+         authority_instance.authority_operations),
+    path("v1/authorityProvider/authorities/<str:uuid>",
+         authority_instance.authority_instance_operations),
+    path("v1/authorityProvider/authorities/<str:uuid>/raProfile/attributes",
+         attributes.get_raprofile_attributes),
     path("v1/authorityProvider/authorities/<str:uuid>/raProfile/attributes/validate",
          attributes.validate_raprofile_attributes),
-    # Authority provider callbacks
-    path("v1/authorityProvider/<str:kind>/<str:winrm_transport>", callbacks.get_winrm_transport_configuration),
 
     # Certificate management interfaces
     path("v2/authorityProvider/authorities/<str:uuid>/certificates/issue/attributes",
@@ -59,9 +62,16 @@ urlpatterns = [
     path("v1/discoveryProvider/<str:kind>/attributes/validate", attributes.validate_discovery_attributes),
     path("v1/discoveryProvider/discover", discovery_history.start_discovery),
     path("v1/discoveryProvider/discover/<str:uuid>", discovery_history.discovery_operations),
-    # Discovery provider callbacks
-    path("v1/discoveryProvider/listCertificateAuthority/<str:authority_instance_uuid>", callbacks.get_ca_names),
-    path("v1/discoveryProvider/listTemplate/<str:authority_instance_uuid>", callbacks.get_template_names),
-    path("v1/discoveryProvider/caSelect/<str:ca_select_method>/<str:authority_instance_uuid>",
-         callbacks.get_ca_select_configuration),
+
+    # Authority Callbacks
+    path("v1/callbacks/authority/winrmConfig/<str:kind>/<str:winrm_transport>",
+         callbacks.get_winrm_transport_configuration),
+    # Discovery Callbacks
+    path("v1/callbacks/discovery/listCertificateAuthority/<str:authority_instance_uuid>", callbacks.get_ca_names),
+    path("v1/callbacks/discovery/listTemplate/<str:authority_instance_uuid>", callbacks.get_template_names),
+    path("v1/callbacks/discovery/caSelect/<str:ca_select_method>/<str:authority_instance_uuid>",
+         callbacks.get_discovery_ca_select_configuration),
+    # RA Profile Callbacks
+    path("v1/callbacks/raProfile/caSelect/<str:ca_select_method>/<str:authority_instance_uuid>",
+         callbacks.get_raprofile_ca_select_configuration),
 ]

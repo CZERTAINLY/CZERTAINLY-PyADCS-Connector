@@ -10,10 +10,10 @@ from django.views.decorators.http import require_http_methods
 from PyADCSConnector.remoting.winrm.scripts import submit_certificate_request_script, identify_certificate_script, \
     get_revoke_script
 from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance_uuid
+from PyADCSConnector.services.attributes.raprofile_attributes import *
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.dump_parser import DumpParser, AuthorityData, TemplateData
-from PyADCSConnector.views.constants import *
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def issue(request, uuid):
 
     template = TemplateData.from_dict(
         attribute_definition_utils.get_attribute_value(
-            TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+            RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, form["raProfileAttributes"]))
 
     return issue_new_certificate(uuid, form["pkcs10"], ca, template)
 
@@ -57,7 +57,7 @@ def renew(request, uuid):
 
     template = TemplateData.from_dict(
         attribute_definition_utils.get_attribute_value(
-            TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+            RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, form["raProfileAttributes"]))
 
     serial_number = get_certificate_serial_number(form["certificate"])
 
@@ -89,7 +89,7 @@ def identify(request, uuid):
 
     template = TemplateData.from_dict(
         attribute_definition_utils.get_attribute_value(
-            TEMPLATE_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+            RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, form["raProfileAttributes"]))
     certificate = form["certificate"]
 
     # Convert certificate to x509 using cryptography module, it should be in base64 format
@@ -152,15 +152,15 @@ def get_certificate_serial_number(certificate):
 
 def get_ca_from_attributes(form):
     select_ca_method = attribute_definition_utils.get_attribute_value(
-        SELECT_CA_METHOD_ATTRIBUTE_NAME, form["raProfileAttributes"])
+        RAPROFILE_SELECT_CA_METHOD_ATTRIBUTE_NAME, form["raProfileAttributes"])
 
     if select_ca_method == CaSelectMethod.SEARCH.method:
         ca = AuthorityData.from_dict(
             attribute_definition_utils.get_attribute_value(
-                CA_NAME_RA_PROFILE_ATTRIBUTE_NAME, form["raProfileAttributes"]))
+                RAPROFILE_CA_NAME_ATTRIBUTE_NAME, form["raProfileAttributes"]))
     elif select_ca_method == CaSelectMethod.CONFIGSTRING.method:
         config_string = attribute_definition_utils.get_attribute_value(
-            CONFIGSTRING_ATTRIBUTE_NAME, form["raProfileAttributes"])
+            RAPROFILE_CONFIGSTRING_ATTRIBUTE_NAME, form["raProfileAttributes"])
         if not config_string:
             raise Exception("ConfigString is required with selected CA Method: " + select_ca_method)
         ca_name = config_string.split("\\")[1]
