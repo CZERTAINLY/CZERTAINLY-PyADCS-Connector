@@ -1,0 +1,2 @@
+class CertificateException(Exception):
+    pass

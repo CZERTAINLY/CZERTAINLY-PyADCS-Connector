@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 @require_http_methods(["GET"])
-def get_endpoints(*args, **kwargs):
+def get_endpoints(request, *args, **kwargs):
     logger.debug("Getting all available endpoints")
 
     endpoint_response = dict()

@@ -1,0 +1,2 @@
+class AuthorityException(Exception):
+    pass
