@@ -262,3 +262,85 @@ EnrollmentEndpoints  : {https://vmi307469.3key.local/Demo%20MS%20Sub%20CA_CES_Ke
         self.assertEqual(templates[0].ca_type, "Enterprise Subordinate CA")
         self.assertEqual(templates[0].is_enterprise, True)
         self.assertEqual(templates[0].is_root, False)
+        self.assertEqual(templates[0].is_accessible, True)
+        self.assertEqual(templates[0].service_status, "Running")
+
+    def test_parse_authority_data_2(self):
+        data = """
+
+Name                : TEST CA 02 Class B
+DisplayName         : TEST CA 02 Class B
+ComputerName        : ca.pki.local
+ConfigString        : ca.pki.local\\TEST CA 02 Class B
+DistinguishedName   : CN=TEST CA 02 Class B,CN=Enrollment Services,CN=Public Key Services,CN=Ser
+                      vices,CN=Configuration,DC=pki,DC=local
+Type                : Enterprise Subordinate CA
+IsEnterprise        : True
+IsRoot              : False
+OperatingSystem     : Microsoft Windows Server 2019 Standard
+IsAccessible        : True
+RegistryOnline      : True
+ServiceStatus       : Running
+SetupStatus         : ServerInstall, SecurityUpgraded, ServerIsUptoDate
+Certificate         : [Subject]
+                        CN=TEST 02 Class B, OU=IT
+                      
+                      [Issuer]
+                        CN=TEST Root CA, OU=IT
+                      
+                      [Serial Number]
+                        5600000002B50D8D92CDA3907F000000000002
+                      
+                      [Not Before]
+                        3. 10. 2023 11:59:59
+                      
+                      [Not After]
+                        3. 10. 2029 12:09:59
+                      
+                      [Thumbprint]
+                        04EE41322E5F2F3187AF13C40CA95B40BBA082FB
+                      
+EnrollmentEndpoints : {}
+
+        """
+        protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
+        result = winrm.Response(protocol_output)
+        templates = DumpParser.parse_authority_data(result)
+        self.assertEqual(len(templates), 1)
+        self.assertEqual(templates[0].name, "TEST CA 02 Class B")
+        self.assertEqual(templates[0].display_name, "TEST CA 02 Class B")
+        self.assertEqual(templates[0].computer_name, "ca.pki.local")
+        self.assertEqual(templates[0].config_string, "ca.pki.local\\TEST CA 02 Class B")
+        self.assertEqual(templates[0].ca_type, "Enterprise Subordinate CA")
+        self.assertEqual(templates[0].is_enterprise, True)
+        self.assertEqual(templates[0].is_root, False)
+        self.assertEqual(templates[0].is_accessible, True)
+        self.assertEqual(templates[0].service_status, "Running")
+
+    def test_parse_authority_data_3(self):
+        data = """
+
+Name          : 3KEY-LAB-CA1
+DisplayName   : 3KEY-LAB-CA1
+ComputerName  : labca1.3key.local
+ConfigString  : labca1.3key.local\\3KEY-LAB-CA1
+Type          :
+IsEnterprise  : False
+IsRoot        : False
+IsAccessible  : False
+ServiceStatus :
+
+        """
+        protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
+        result = winrm.Response(protocol_output)
+        templates = DumpParser.parse_authority_data(result)
+        self.assertEqual(len(templates), 1)
+        self.assertEqual(templates[0].name, "3KEY-LAB-CA1")
+        self.assertEqual(templates[0].display_name, "3KEY-LAB-CA1")
+        self.assertEqual(templates[0].computer_name, "labca1.3key.local")
+        self.assertEqual(templates[0].config_string, "labca1.3key.local\\3KEY-LAB-CA1")
+        self.assertEqual(templates[0].ca_type, "")
+        self.assertEqual(templates[0].is_enterprise, False)
+        self.assertEqual(templates[0].is_root, False)
+        self.assertEqual(templates[0].is_accessible, False)
+        self.assertEqual(templates[0].service_status, "")
