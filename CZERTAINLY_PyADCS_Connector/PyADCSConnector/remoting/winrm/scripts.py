@@ -63,11 +63,11 @@ def get_templates_script():
     ])
 
 
-def select_objects(command, property):
-    if not property:
+def select_objects(command, select_property):
+    if not select_property:
         raise ValueError("Empty property is not a valid command.")
 
-    properties = ", ".join(property)
+    properties = ", ".join(select_property)
     return f"{command} | Select-Object -Property {properties}"
 
 
@@ -78,9 +78,7 @@ def dump_certificates_script(ca: AuthorityData, template: TemplateData or None, 
     base_cmd = (f'Get-CertificationAuthority -Name "{ca.name}" | Get-AdcsDatabaseRow -Property "RawCertificate"'
                 f' -Page {page} -PageSize {page_size} -Filter "Request.Disposition -ge 12",'
                 f' "Request.Disposition -le 21"')
-    if not template:
-        base_cmd = base_cmd
-    else:
+    if template:
         if template.schema_version == "1":
             base_cmd = f'{base_cmd}, "CertificateTemplate -eq {template.name}"'
         else:
