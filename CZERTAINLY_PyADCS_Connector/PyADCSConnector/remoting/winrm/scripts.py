@@ -25,7 +25,23 @@ def get_ca_script(computer_name: str):
 def get_cas_script():
     return '\n'.join([
         IMPORT_MODULE,
-        "Get-CertificationAuthority | Format-List *",
+        "$TemplateList = @()",
+        "(Get-CertificationAuthority) | Foreach-Object {",
+        "$template = $_",
+        "$OutputObject = \"\" | Select Name, DisplayName, ComputerName, ConfigString, Type, IsEnterprise, IsRoot, "
+        "IsAccessible, ServiceStatus",
+        "$outputObject.Name = $template.Name",
+        "$OutputObject.DisplayName = $template.DisplayName",
+        "$OutputObject.ComputerName = $template.ComputerName",
+        "$OutputObject.ConfigString = $template.ConfigString",
+        "$OutputObject.Type = $template.Type",
+        "$OutputObject.IsEnterprise = $template.IsEnterprise",
+        "$OutputObject.IsRoot = $template.IsRoot",
+        "$OutputObject.IsAccessible = $template.IsAccessible",
+        "$OutputObject.ServiceStatus = $template.ServiceStatus",
+        "$TemplateList += $OutputObject",
+        "}",
+        "$TemplateList | Format-List"
     ])
 
 

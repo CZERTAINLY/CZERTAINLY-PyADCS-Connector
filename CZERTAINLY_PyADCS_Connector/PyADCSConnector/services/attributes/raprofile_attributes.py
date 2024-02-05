@@ -159,7 +159,7 @@ def get_raprofile_ca_name_attribute(ca_names):
         is_read_only=False,
         is_visible=True,
         is_list=True,
-        is_multi_select=True)
+        is_multi_select=False)
     content = ca_names
 
     return build_attribute(RAPROFILE_CA_NAME_ATTRIBUTE_NAME,

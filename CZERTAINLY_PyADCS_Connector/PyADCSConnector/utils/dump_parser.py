@@ -47,7 +47,8 @@ class TemplateData:
 
 
 class AuthorityData:
-    def __init__(self, name, display_name, computer_name, config_string, ca_type, is_enterprise, is_root):
+    def __init__(self, name, display_name, computer_name, config_string, ca_type, is_enterprise, is_root,
+                 is_accessible, service_status):
         self.name = name
         self.display_name = display_name
         self.computer_name = computer_name
@@ -55,6 +56,8 @@ class AuthorityData:
         self.ca_type = ca_type
         self.is_enterprise = is_enterprise
         self.is_root = is_root
+        self.is_accessible = is_accessible
+        self.service_status = service_status
 
     def to_dict(self):
         return {
@@ -64,7 +67,9 @@ class AuthorityData:
             "config_string": self.config_string,
             "ca_type": self.ca_type,
             "is_enterprise": self.is_enterprise,
-            "is_root": self.is_root
+            "is_root": self.is_root,
+            "is_accessible": self.is_accessible,
+            "service_status": self.service_status
         }
 
     @staticmethod
@@ -76,7 +81,9 @@ class AuthorityData:
             config_string=authority["config_string"],
             ca_type=authority["ca_type"],
             is_enterprise=authority["is_enterprise"],
-            is_root=authority["is_root"])
+            is_root=authority["is_root"],
+            is_accessible=authority["is_accessible"],
+            service_status=authority["service_status"])
         return authority_data
 
     @staticmethod
@@ -98,17 +105,22 @@ class DumpParser:
         template = ""
 
         for line in lines:
-            if in_cert and line.startswith("                         "):
+            if in_cert and line.startswith("      "):
                 cert.append(line.strip())
-            elif line.startswith("CertificateTemplate        : "):
-                template = DumpParser.parse_template_name(line)
-            elif line.startswith("RawCertificate             : "):
+            elif line.startswith("CertificateTemplate"):
+                template = get_value_from_line(line)
+            elif line.startswith("RawCertificate"):
                 # first line
-                cert.append(line.replace("RawCertificate             : ", "").strip())
+                cert.append(get_value_from_line(line))
                 in_cert = True
             else:
                 if in_cert:
-                    cert_data = "-----BEGIN CERTIFICATE-----\n" + "\n".join(cert) + "\n-----END CERTIFICATE-----"
+                    # cert_data = "-----BEGIN CERTIFICATE-----\n" + "\n".join(cert) + "\n-----END CERTIFICATE-----"
+                    cert_data = ("".join(cert)
+                                 .replace("-----BEGIN CERTIFICATE-----", "")
+                                 .replace("-----END CERTIFICATE-----", "")
+                                 .replace("\r", "")
+                                 .replace("\n", ""))
                     result.append(ParseResult(template, cert_data))
                     cert = []
                     template = ""
@@ -127,12 +139,12 @@ class DumpParser:
         config_string = ""
 
         for line in lines:
-            if line.startswith("SerialNumber               : "):
-                serial_number = line.replace("SerialNumber               : ", "").strip()
-            elif line.startswith("CertificateTemplate        : "):
-                certificate_template = line.replace("CertificateTemplate        : ", "").strip()
-            elif line.startswith("ConfigString               : "):
-                config_string = line.replace("ConfigString               : ", "").strip()
+            if line.startswith("SerialNumber"):
+                serial_number = get_value_from_line(line)
+            elif line.startswith("CertificateTemplate"):
+                certificate_template = get_value_from_line(line)
+            elif line.startswith("ConfigString"):
+                config_string = get_value_from_line(line)
                 complete_record = True
 
             if complete_record:
@@ -143,10 +155,6 @@ class DumpParser:
                 complete_record = False
 
         return result
-
-    @staticmethod
-    def parse_template_name(line):
-        return line.replace("CertificateTemplate        : ", "").strip()
 
     @staticmethod
     def parse_template_data(input_data):
@@ -161,16 +169,16 @@ class DumpParser:
         oid = ""
 
         for line in lines:
-            if line.startswith("Name          : "):
-                name = line.replace("Name          : ", "").strip()
-            elif line.startswith("DisplayName   : "):
-                display_name = line.replace("DisplayName   : ", "").strip()
-            elif line.startswith("SchemaVersion : "):
-                schema_version = line.replace("SchemaVersion : ", "").strip()
-            elif line.startswith("Version       : "):
-                version = line.replace("Version       : ", "").strip()
-            elif line.startswith("OID           : "):
-                oid = line.replace("OID           : ", "").strip()
+            if line.startswith("Name"):
+                name = get_value_from_line(line)
+            elif line.startswith("DisplayName"):
+                display_name = get_value_from_line(line)
+            elif line.startswith("SchemaVersion"):
+                schema_version = get_value_from_line(line)
+            elif line.startswith("Version"):
+                version = get_value_from_line(line)
+            elif line.startswith("OID"):
+                oid = get_value_from_line(line)
                 complete_record = True
 
             if complete_record:
@@ -197,27 +205,34 @@ class DumpParser:
         ca_type = ""
         is_enterprise = ""
         is_root = ""
+        is_accessible = ""
+        service_status = ""
 
         for line in lines:
-            if line.startswith("Name                 : "):
-                name = line.replace("Name                 : ", "").strip()
-            elif line.startswith("DisplayName          : "):
-                display_name = line.replace("DisplayName          : ", "").strip()
-            elif line.startswith("ComputerName         : "):
-                computer_name = line.replace("ComputerName         : ", "").strip()
-            elif line.startswith("ConfigString         : "):
-                config_string = line.replace("ConfigString         : ", "").strip()
-            elif line.startswith("Type                 : "):
-                ca_type = line.replace("Type                 : ", "").strip()
-            elif line.startswith("IsEnterprise         : "):
-                is_enterprise = eval(line.replace("IsEnterprise         : ", "").strip())
-            elif line.startswith("IsRoot               : "):
-                is_root = eval(line.replace("IsRoot               : ", "").strip())
+            if line.startswith("Name"):
+                name = get_value_from_line(line)
+            elif line.startswith("DisplayName"):
+                display_name = get_value_from_line(line)
+            elif line.startswith("ComputerName"):
+                computer_name = get_value_from_line(line)
+            elif line.startswith("ConfigString"):
+                config_string = get_value_from_line(line)
+            elif line.startswith("Type"):
+                ca_type = get_value_from_line(line)
+            elif line.startswith("IsEnterprise"):
+                is_enterprise = eval(get_value_from_line(line))
+            elif line.startswith("IsRoot"):
+                is_root = eval(get_value_from_line(line))
+            elif line.startswith("IsAccessible"):
+                is_accessible = eval(get_value_from_line(line))
+            elif line.startswith("ServiceStatus"):
+                service_status = get_value_from_line(line)
                 complete_record = True
 
             if complete_record:
                 result.append(AuthorityData(
-                    name, display_name, computer_name, config_string, ca_type, is_enterprise, is_root))
+                    name, display_name, computer_name, config_string, ca_type, is_enterprise, is_root,
+                    is_accessible, service_status))
                 name = ""
                 display_name = ""
                 computer_name = ""
@@ -225,6 +240,13 @@ class DumpParser:
                 ca_type = ""
                 is_enterprise = ""
                 is_root = ""
+                is_accessible = ""
+                service_status = ""
                 complete_record = False
 
         return result
+
+
+def get_value_from_line(line):
+    _, value = map(str.strip, line.split(":", 1))
+    return value
