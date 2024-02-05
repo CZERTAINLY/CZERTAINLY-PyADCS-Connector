@@ -115,7 +115,12 @@ class DumpParser:
                 in_cert = True
             else:
                 if in_cert:
-                    cert_data = "-----BEGIN CERTIFICATE-----\n" + "\n".join(cert) + "\n-----END CERTIFICATE-----"
+                    # cert_data = "-----BEGIN CERTIFICATE-----\n" + "\n".join(cert) + "\n-----END CERTIFICATE-----"
+                    cert_data = ("".join(cert)
+                                 .replace("-----BEGIN CERTIFICATE-----", "")
+                                 .replace("-----END CERTIFICATE-----", "")
+                                 .replace("\r", "")
+                                 .replace("\n", ""))
                     result.append(ParseResult(template, cert_data))
                     cert = []
                     template = ""
