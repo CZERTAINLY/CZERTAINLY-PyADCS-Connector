@@ -1,0 +1,2 @@
+class DiscoveryException(Exception):
+    pass
