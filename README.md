@@ -1,6 +1,31 @@
 # CZERTAINLY-PyADCS-Connector
 
-Using Python 3.12.
+> This repository is part of the open-source project CZERTAINLY. You can find more information about the project at [CZERTAINLY](https://github.com/3KeyCompany/CZERTAINLY) repository, including the contribution guide.
+
+PyADCS `Connector` is the implementation of the following `Function Groups` and `Kinds`:
+
+| Function Group       | Kind           |
+|----------------------|----------------|
+| `Authority Provider` | `PyADCS-WinRM` |
+| `Discovery Provider` | `PyADCS-WinRM` |
+
+PyADCS `Connector` is the implementation of certificate management for Microsoft ADCS that is compatible with the v2 client operations interface. The `Connector` is currently developed to work with through the WinRM protocol.
+
+> It is expected that the SSH PowerShell will be supported in the future.
+
+PyADCS `Connector` allows you to perform the following operations:
+
+`Authority Provider`
+- Issue certificate
+- Renew certificate
+- Revoke certificate
+
+`Discovery Provider`
+- Discover certificates
+
+## Database requirements
+
+PyADCS `Connector` requires the PostgreSQL database version 12+.
 
 ## Docker container
 
