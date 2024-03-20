@@ -32,7 +32,7 @@ class ExceptionHandlerMiddleware:
         if isinstance(exception, ValidationException):
             logger.info("(422) ValidationException occurred: " + str(exception))
             # logger.exception(exception)
-            return JsonResponse({'message': str(exception)}, status=422)
+            return JsonResponse([str(exception)], status=422, safe=False)
         if isinstance(exception, WinRMExecutionException):
             logger.info("(400) WinRMExecutionException occurred: " + str(exception))
             # logger.exception(exception)
