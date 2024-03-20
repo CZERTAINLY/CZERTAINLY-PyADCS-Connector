@@ -16,7 +16,7 @@ pip==23.3.2
 psycopg2-binary==2.9.9
 pycparser==2.21
 pyspnego==0.10.2
-pytz==2023.3.post1
+pytz==2024.1
 pywinrm==0.4.3
 requests==2.31.0
 requests-credssp==2.0.0
