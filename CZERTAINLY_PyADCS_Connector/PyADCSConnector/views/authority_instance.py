@@ -41,8 +41,9 @@ def authority_instance_operations(request, uuid, *args, **kwargs):
             return JsonResponse({"message": "Requested Authority with UUID %s not found" % uuid}, status=404)
     elif request.method == "POST":
         try:
+            request_dto = json.loads(request.body)
             authority = AuthorityInstance.objects.get(uuid=uuid)
-            authority = update_authority_instance(request, authority)
+            authority = update_authority_instance(request_dto, authority)
             serializer = AuthorityInstanceSerializer(authority)
             return JsonResponse(serializer.data, safe=False)
         except AuthorityInstance.DoesNotExist:

@@ -8,6 +8,112 @@ class DumpParserTest(TestCase):
     def test_parse_certificates(self):
         data = """
 
+RequestID                  : 710
+Request.StatusCode         : 0
+Request.DispositionMessage : Issued
+Request.RequesterName      : 3KEY\\nejaky.uzivatel
+Request.SubmittedWhen      : 7/7/2023 9:35:52 AM
+Request.CommonName         :
+CertificateTemplate        : 1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.2517003.8444064
+RawCertificate             : MIIG0DCCBLigAwIBAgITGAAAAsaadzCSgw33agAAAAACxjANBgkqhkiG9w0BAQ0F
+                             ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
+                             YW55IHMuci5vLjAeFw0yMzA3MDcwOTI1NTJaFw0yNDA3MDYwOTI1NTJaMIGEMRUw
+                             EwYKCZImiZPyLGQBGRYFbG9jYWwxFDASBgoJkiaJk/IsZAEZFgQza2V5MQ4wDAYD
+                             VQQDEwVVc2VyczEbMBkGA1UEAwwSTsSbamFrw70gVcW+aXZhdGVsMSgwJgYJKoZI
+                             hvcNAQkBFhltaWNoYWwudHV0a29AM2tleS5jb21wYW55MIIBIjANBgkqhkiG9w0B
+                             AQEFAAOCAQ8AMIIBCgKCAQEAlCT+JtEnPTmsjvBwecsaNmwEiJxmC6QzCrlcppuE
+                             buGlGBopaSI0JaAutLpNd8rfzlaPX20x0AvHCiFEHHopISsx/brxkgEax3wpfdDO
+                             jmtHGOwklPW1W76ooY8qI6fRfn0gUVi338nxI+KWwxIZCItu23ZPEfoCwPNfUtLc
+                             rHc32ZiA7IZqv88vgH12LAScjB0E/Fd/Udt2tOaSNt4u/eUMBcYvybRWEaPhsU4x
+                             lBhVvO1V57LGMhe5L4p9AhCxaY+cF1zeRhznm5RMTSm1dNS2gyZrioZa7i2SUJl9
+                             zXY3mGFl7fpVQFk48Bu8rnJ7yWacvSE5ZlgFsO/dvA5wEQIDAQABo4IChTCCAoEw
+                             PQYJKwYBBAGCNxUHBDAwLgYmKwYBBAGCNxUIh+WDYaiHcIKJgTyEk8IBhYi5aoFM
+                             gZnQC4SDsSACAWQCAQMwKQYDVR0lBCIwIAYIKwYBBQUHAwIGCCsGAQUFBwMEBgor
+                             BgEEAYI3CgMEMA4GA1UdDwEB/wQEAwIFoDA1BgkrBgEEAYI3FQoEKDAmMAoGCCsG
+                             AQUFBwMCMAoGCCsGAQUFBwMEMAwGCisGAQQBgjcKAwQwRAYJKoZIhvcNAQkPBDcw
+                             NTAOBggqhkiG9w0DAgICAIAwDgYIKoZIhvcNAwQCAgCAMAcGBSsOAwIHMAoGCCqG
+                             SIb3DQMHMB0GA1UdDgQWBBSeqeR6QySEWQ1Qc4pXyG73AvaxaDAfBgNVHSMEGDAW
+                             gBSSwrzfVcXBk4VJB/esyR0LaAEHUTBNBgNVHR8ERjBEMEKgQKA+hjxodHRwOi8v
+                             bGFiMDIuM2tleS5jb21wYW55L2NybHMvZGVtby9EZW1vJTIwTVMlMjBTdWIlMjBD
+                             QS5jcmwwVwYIKwYBBQUHAQEESzBJMEcGCCsGAQUFBzABhjtodHRwOi8vbGFiMDIu
+                             M2tleS5jb21wYW55L2Nhcy9kZW1vL0RlbW8lMjBNUyUyMFN1YiUyMENBLmNydDBQ
+                             BgNVHREESTBHoCoGCisGAQQBgjcUAgOgHAwabmVqYWt5LnV6aXZhdGVsQDNrZXku
+                             bG9jYWyBGW1pY2hhbC50dXRrb0Aza2V5LmNvbXBhbnkwTgYJKwYBBAGCNxkCBEEw
+                             P6A9BgorBgEEAYI3GQIBoC8ELVMtMS01LTIxLTM4MjAwMjQ4NTctMjY5NTcxMTA5
+                             OS00NTA5NTgwMzgtMTYxODANBgkqhkiG9w0BAQ0FAAOCAgEAUrWqJxH0CT2ydNjx
+                             f2UWwYJdy+JNKK/nWG9WOphqd/18Dnr5Ed4zehvEXoXOdme2uypc0h6xffNSZMUy
+                             D8hd0hjF5qS4jxSX6pqhhoiUHedESaJj47yvkWV3TLUh+YUb1cgwOP3F2g+zSQzV
+                             GqhaXJjiL8zV49PmGoEVwsuAMGIsC5BIsv+G3EXMc0la3L5AgI2c1c50fbgrmOhM
+                             1Cy5K7BpgdMKnUrzTv1ayMhKy+0wdCj77QzihEXJGSRVqqeS+NiloKwHBRq2GWn6
+                             ABzAy+x7tqj3qGPnCyl3W9TD8DBv+ljIYgOuCxHMdZPruPvu1I+luUy9a6WD2B/F
+                             ImI4gvK3RkqDbnUUOITy1j5cCvg3z9HWil8p5420VJ1LLSpHg5Tee5+ZiTf2tQnk
+                             jypHbt7hTfDwJKmdh1wB+H8dhmFGLDYDB3cS2/QQuauWzUFjKQVtSoOe2LhWfO36
+                             Huz2Lkmq6Ic0ALsyc/As33K8ot59PDQLwDVZuSIrY03VrSLMmqvc6+ryy0lmxI/K
+                             K8WEa5tN6DCKE0F8EdZ4W/gZC2633uxgxklXZ8bP7eVZo8eC08/0+lJd0lxVrCWp
+                             rbK5G6raNl0gxum4cdly1xFB1zyT1cge3Hnka9S3hocnyYPBpa/oDlUh8vjq2gK9
+                             XcG0+T+/UgTeq7Sg6nNfZDZdkIk=
+
+CertificateTemplateOid     : Certificate authentication external client
+                             (1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.2517003.8444064)
+RowId                      : 710
+ConfigString               : vmi307469.3key.local\\Demo MS Sub CA
+Table                      : Request
+Properties                 : {[RequestID, 710], [Request.StatusCode, 0], [Request.DispositionMessage, Issued],
+                             [Request.RequesterName, 3KEY\\nejaky.uzivatel]...}
+
+RequestID                  : 716
+Request.StatusCode         : 0
+Request.DispositionMessage : Issued
+Request.RequesterName      : 3KEY\\nejaky.uzivatel
+Request.SubmittedWhen      : 8/18/2023 9:56:15 AM
+Request.CommonName         : Michal Zitko
+CertificateTemplate        : 1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.2517003.8444064
+RawCertificate             : MIIG0DCCBLigAwIBAgITGAAAAsw25Qj4eR6dMQAAAAACzDANBgkqhkiG9w0BAQ0F
+                             ADA3MRcwFQYDVQQDDA5EZW1vIE1TIFN1YiBDQTEcMBoGA1UECgwTM0tleSBDb21w
+                             YW55IHMuci5vLjAeFw0yMzA4MTgwOTQ2MTVaFw0yNDA4MTcwOTQ2MTVaMIGEMRUw
+                             EwYKCZImiZPyLGQBGRYFbG9jYWwxFDASBgoJkiaJk/IsZAEZFgQza2V5MQ4wDAYD
+                             VQQDEwVVc2VyczEbMBkGA1UEAwwSTsSbamFrw70gVcW+aXZhdGVsMSgwJgYJKoZI
+                             hvcNAQkBFhltaWNoYWwudHV0a29AM2tleS5jb21wYW55MIIBIjANBgkqhkiG9w0B
+                             AQEFAAOCAQ8AMIIBCgKCAQEAyql/vxeDtOrNXCjhBvJhr/v5MAS5zLZeLG8Znepa
+                             DO/3LDQU344rZbqN/LJw1i0Z4KpPaasQVMV9QS3WimsFcTS7xmCnFKf2zlzCnTis
+                             wkiv1MxktbTN1f+a3sdMxxKbx+7ILoVvPNSUSz70PJIAeJOLbB4aSogx8NY3KMg4
+                             yRJtzv0KpzNgs4P3bEB/wZdMhzCSxzA6zqHVdllBGUIL6KN/Afe84BAx75FRmfrM
+                             vQUrX70eQgFU+6faeNI19H6tg8qT1uirrSg/CO2rtyECzGELbrxE1Dnm4JdZ5237
+                             9pA9n5atg3o7Qh8AChZzwQYf3YmzA3UfqA0xSV0tPfYtEQIDAQABo4IChTCCAoEw
+                             HQYDVR0OBBYEFBJBHJrSR1Tindvn0QRUE8zuMtjgMB8GA1UdIwQYMBaAFJLCvN9V
+                             xcGThUkH96zJHQtoAQdRME0GA1UdHwRGMEQwQqBAoD6GPGh0dHA6Ly9sYWIwMi4z
+                             a2V5LmNvbXBhbnkvY3Jscy9kZW1vL0RlbW8lMjBNUyUyMFN1YiUyMENBLmNybDBX
+                             BggrBgEFBQcBAQRLMEkwRwYIKwYBBQUHMAGGO2h0dHA6Ly9sYWIwMi4za2V5LmNv
+                             bXBhbnkvY2FzL2RlbW8vRGVtbyUyME1TJTIwU3ViJTIwQ0EuY3J0MA4GA1UdDwEB
+                             /wQEAwIFoDA9BgkrBgEEAYI3FQcEMDAuBiYrBgEEAYI3FQiH5YNhqIdwgomBPIST
+                             wgGFiLlqgUyBmdALhIOxIAIBZAIBBDApBgNVHSUEIjAgBggrBgEFBQcDAgYIKwYB
+                             BQUHAwQGCisGAQQBgjcKAwQwNQYJKwYBBAGCNxUKBCgwJjAKBggrBgEFBQcDAjAK
+                             BggrBgEFBQcDBDAMBgorBgEEAYI3CgMEMFAGA1UdEQRJMEegKgYKKwYBBAGCNxQC
+                             A6AcDBpuZWpha3kudXppdmF0ZWxAM2tleS5sb2NhbIEZbWljaGFsLnR1dGtvQDNr
+                             ZXkuY29tcGFueTBOBgkrBgEEAYI3GQIEQTA/oD0GCisGAQQBgjcZAgGgLwQtUy0x
+                             LTUtMjEtMzgyMDAyNDg1Ny0yNjk1NzExMDk5LTQ1MDk1ODAzOC0xNjE4MEQGCSqG
+                             SIb3DQEJDwQ3MDUwDgYIKoZIhvcNAwICAgCAMA4GCCqGSIb3DQMEAgIAgDAHBgUr
+                             DgMCBzAKBggqhkiG9w0DBzANBgkqhkiG9w0BAQ0FAAOCAgEABKsm0OiHTXht+nr6
+                             6/ayMgERYWQ3QOw68FGlJSL9GqhMTYu9/cFJVm4yoIIm35w+7YWCqzpxHU35V3Ky
+                             xxKZ4EFiBorligIvmeEec+YIrw6yKnbQpxHi9qAgOk1zUJWWKU65L/ifH7o9BZHT
+                             KzFf8563QZVXQY/SOiLEqKtSgtDd+o70xywHmOz7egzuX7lfI5uERf5iiIqqQZCJ
+                             UMy7y7eP88/Nqt/ZhQvDXMdCO+DuQ+VqbBcDMFwD9NAsGKqHkXVkumPEynINZh3f
+                             otcGlQQhJDfiSsGJC46ToStX/f1Zn7sgRDgv+zQlQi2GlAOVQrJd/2x1qESKXc+9
+                             IWRlGtd1vqrHH2r9n4mkgp39kz9f+LPErFo1tDXVfMfHNfT9dVWcrXiXL79pNfRJ
+                             2ZjtccPcJPsjSFJn9jmVZgVDgi4JFsDkxiDKfhh23PrQ1fkwAuCd9BtnAi4bqH9W
+                             9m0SrEY34W4dEplldOplPYiGLSTnJeSXwP3Ip0Qz2ZyEATPc0NZHN82S0RMbB4TJ
+                             N9uqAjv9aubVMlKUcdZ6ZRmYWLi0PEfFuB3cI5qVqqP2S8+QpeaHg3XncUfXSvnL
+                             cZIPDedc8EP2gUmZY8cpXaHOLlu3624VBSD92AsXnvUFCiawETWeUdcrv40R0XfO
+                             CnvWrdJxVXh1pfmRF9Rcu76M9KU=
+
+CertificateTemplateOid     : Certificate authentication external client
+                             (1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.2517003.8444064)
+RowId                      : 716
+ConfigString               : vmi307469.3key.local\\Demo MS Sub CA
+Table                      : Request
+Properties                 : {[RequestID, 716], [Request.StatusCode, 0], [Request.DispositionMessage, Issued],
+                             [Request.RequesterName, 3KEY\\nejaky.uzivatel]...}
+
 RequestID                  : 787
 Request.StatusCode         : 0
 Request.DispositionMessage : Issued
@@ -136,8 +242,8 @@ Properties                 : {[RequestID, 789], [Request.StatusCode, 0], [Reques
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
         templates = DumpParser.parse_certificates(result)
-        self.assertEqual(len(templates), 3)
-        self.assertEqual(templates[0].template, "WebServer")
+        self.assertEqual(len(templates), 5)
+        self.assertEqual(templates[2].template, "WebServer")
 
     def test_parse_template(self):
         data = """
