@@ -79,7 +79,7 @@ def discover_certificates(request_dto, discovery_history):
             raise Exception("Wrong format of ConfigString: " + config_string)
         cas = [AuthorityData(
             config_string.split("\\")[1], config_string.split("\\")[1], config_string.split("\\")[0],
-            config_string, "", None, None)]
+            config_string, "", None, None, None, None)]
     else:
         raise Exception("Unknown CA Select Method: " + select_ca_method)
 

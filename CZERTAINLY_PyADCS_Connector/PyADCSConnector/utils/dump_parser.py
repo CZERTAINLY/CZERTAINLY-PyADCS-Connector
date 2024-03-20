@@ -107,9 +107,9 @@ class DumpParser:
         for line in lines:
             if in_cert and line.startswith("      "):
                 cert.append(line.strip())
-            elif line.startswith("CertificateTemplate"):
+            elif line.startswith("CertificateTemplate "):  # the space is important
                 template = get_value_from_line(line)
-            elif line.startswith("RawCertificate"):
+            elif line.startswith("RawCertificate "):
                 # first line
                 cert.append(get_value_from_line(line))
                 in_cert = True
@@ -139,11 +139,11 @@ class DumpParser:
         config_string = ""
 
         for line in lines:
-            if line.startswith("SerialNumber"):
+            if line.startswith("SerialNumber "):
                 serial_number = get_value_from_line(line)
-            elif line.startswith("CertificateTemplate"):
+            elif line.startswith("CertificateTemplate "):
                 certificate_template = get_value_from_line(line)
-            elif line.startswith("ConfigString"):
+            elif line.startswith("ConfigString "):
                 config_string = get_value_from_line(line)
                 complete_record = True
 
@@ -169,15 +169,15 @@ class DumpParser:
         oid = ""
 
         for line in lines:
-            if line.startswith("Name"):
+            if line.startswith("Name "):
                 name = get_value_from_line(line)
-            elif line.startswith("DisplayName"):
+            elif line.startswith("DisplayName "):
                 display_name = get_value_from_line(line)
-            elif line.startswith("SchemaVersion"):
+            elif line.startswith("SchemaVersion "):
                 schema_version = get_value_from_line(line)
-            elif line.startswith("Version"):
+            elif line.startswith("Version "):
                 version = get_value_from_line(line)
-            elif line.startswith("OID"):
+            elif line.startswith("OID "):
                 oid = get_value_from_line(line)
                 complete_record = True
 
@@ -209,23 +209,23 @@ class DumpParser:
         service_status = ""
 
         for line in lines:
-            if line.startswith("Name"):
+            if line.startswith("Name "):
                 name = get_value_from_line(line)
-            elif line.startswith("DisplayName"):
+            elif line.startswith("DisplayName "):
                 display_name = get_value_from_line(line)
-            elif line.startswith("ComputerName"):
+            elif line.startswith("ComputerName "):
                 computer_name = get_value_from_line(line)
-            elif line.startswith("ConfigString"):
+            elif line.startswith("ConfigString "):
                 config_string = get_value_from_line(line)
-            elif line.startswith("Type"):
+            elif line.startswith("Type "):
                 ca_type = get_value_from_line(line)
-            elif line.startswith("IsEnterprise"):
+            elif line.startswith("IsEnterprise "):
                 is_enterprise = eval(get_value_from_line(line))
-            elif line.startswith("IsRoot"):
+            elif line.startswith("IsRoot "):
                 is_root = eval(get_value_from_line(line))
-            elif line.startswith("IsAccessible"):
+            elif line.startswith("IsAccessible "):
                 is_accessible = eval(get_value_from_line(line))
-            elif line.startswith("ServiceStatus"):
+            elif line.startswith("ServiceStatus "):
                 service_status = get_value_from_line(line)
                 complete_record = True
 
