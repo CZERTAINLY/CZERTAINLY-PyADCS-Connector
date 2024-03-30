@@ -140,7 +140,7 @@ def get_ca_from_attributes(request_dto):
             raise Exception("Wrong format of ConfigString: " + config_string)
         ca = AuthorityData(
             config_string.split("\\")[1], config_string.split("\\")[1], config_string.split("\\")[0],
-            config_string, "", None, None)
+            config_string, "", None, None, None, None)
     else:
         raise Exception("Unknown CA Select Method: " + select_ca_method)
 
