@@ -1,7 +1,7 @@
 import base64
 from hashlib import sha256
 
-from asn1crypto import cms, util, algos, x509, core, pem, csr, keys
+from asn1crypto import csr
 from asn1crypto.algos import DigestAlgorithm, DigestAlgorithmId
 from asn1crypto.core import OctetBitString
 

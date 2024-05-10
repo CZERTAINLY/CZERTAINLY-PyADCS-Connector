@@ -15,8 +15,7 @@ from PyADCSConnector.services.attributes.raprofile_attributes import RAPROFILE_T
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.dump_parser import TemplateData, DumpParser, AuthorityData
-from PyADCSConnector.utils.csr import convert_to_null_signed_pkcs10
-
+from PyADCSConnector.utils.cms_utils import convert_crmf_to_null_signed_pkcs10
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +93,7 @@ def identify(request_dto, uuid):
 
 def issue_new_certificate(uuid, certificate_request, format, ca: AuthorityData, template: TemplateData):
     if format == "crmf":
-        certificate_request = convert_to_null_signed_pkcs10(certificate_request)
+        certificate_request = convert_crmf_to_null_signed_pkcs10(certificate_request)
     session = create_session_from_authority_instance_uuid(uuid)
     session.connect()
     result = session.run_ps(submit_certificate_request_script(certificate_request, ca, template))

@@ -73,62 +73,7 @@ class OtherMsgs(SequenceOf):
     _child_spec = OtherMsg
 
 
-class SequenceCustom(Sequence):
-    def __setitem__(self, key, value):
-        """
-        Allows settings fields by name or index
-
-        :param key:
-            A unicode string of the field name, or an integer of the field index
-
-        :param value:
-            A native Python datatype to set the field value to. This method will
-            construct the appropriate Asn1Value object from _fields.
-
-        :raises:
-            ValueError - when a field name or index is invalid
-        """
-
-        # We inline this check to prevent method invocation each time
-        if self.children is None:
-            self._parse_children()
-
-        if not isinstance(key, int_types):
-            if key not in self._field_map:
-                raise KeyError(unwrap(
-                    '''
-                    No field named "%s" defined for %s
-                    ''',
-                    key,
-                    type_name(self)
-                ))
-            key = self._field_map[key]
-
-        field_name, field_spec, value_spec, field_params, _ = self._determine_spec(key)
-
-        new_value = self._make_value(field_name, field_spec, value_spec, field_params, value)
-
-        invalid_value = False
-        if isinstance(new_value, Any):
-            invalid_value = new_value.parsed is None
-
-        if invalid_value:
-            raise ValueError(unwrap(
-                '''
-                Value for field "%s" of %s is not set
-                ''',
-                field_name,
-                type_name(self)
-            ))
-
-        self.children[key] = new_value
-
-        if self._native is not None:
-            self._native[self._fields[key][0]] = self.children[key].native
-        self._mutated = True
-
-
-class PKIData(SequenceCustom):
+class PKIData(Sequence):
     _fields = [
         ('controlSequence', TaggedAttributes,  {'optional': True}),
         ('reqSequence', TaggedRequests),
