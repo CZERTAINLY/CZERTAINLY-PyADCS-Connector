@@ -44,8 +44,8 @@ class TaggedCertificationRequest(Sequence):
 
 
 class TaggedRequest(Choice):
-    _alternatives = [('tcr', TaggedCertificationRequest),
-                     ('crm', CertReqMsg)
+    _alternatives = [('tcr', TaggedCertificationRequest, {'implicit': 0}),
+                     ('crm', CertReqMsg, {'implicit': 1})
                      ]
 
 
