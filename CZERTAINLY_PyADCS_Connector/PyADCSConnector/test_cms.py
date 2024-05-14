@@ -5,7 +5,8 @@ from asn1crypto import cms, csr, x509
 from asn1crypto.algos import DigestAlgorithm, DigestAlgorithmId, SignedDigestAlgorithm
 from asn1crypto.cms import ContentInfo, DigestAlgorithms, SignedData, SignerInfo, SignerInfos, CertificateSet, \
     CMSAttributes, CMSAttribute
-from asn1crypto.core import OctetBitString, ParsableOctetString, SequenceOf, SetOf, OctetString, Null
+from asn1crypto.core import OctetBitString, ParsableOctetString, SequenceOf, SetOf, OctetString, Null, ObjectIdentifier, \
+    Set, UTCTime, Sequence
 from asn1crypto.csr import CRIAttributes
 from django.test import TestCase
 
@@ -105,11 +106,17 @@ class CmsTest(TestCase):
         certificate = x509.Certificate.load(base64.b64decode(cert))
 
         signed_attributes = CMSAttributes()
-        attribute = CMSAttribute()
-        attribute['type'] = '1.2.840.113549.1.9.3'  # PKCS#9 content type
-        # attribute['values'] = SetOf(OctetString('1.3.6.1.5.5.7.12.2'))
+        attribute_content_type = CMSAttribute()
+        attribute_content_type['type'] = '1.2.840.113549.1.9.3'  # PKCS#9 content type
+        attribute_content_type['values'] = ['1.3.6.1.5.5.7.12.2']
 
-        signed_attributes.append(attribute)
+        attribute_message_digest = CMSAttribute()
+        attribute_message_digest['type'] = '1.2.840.113549.1.9.4'  # message digest
+        # attribute_message_digest['values'] = [sha256(enc_ci['content'].dump()).digest()]
+        attribute_message_digest['values'] = [OctetString(sha256(enc_ci['content'].native).digest())]
+
+        signed_attributes.append(attribute_content_type)
+        signed_attributes.append(attribute_message_digest)
 
         signer_info = SignerInfo()
         signer_info['version'] = cms.CMSVersion(1)  # because the sid is issuer_and_serial_number
@@ -119,9 +126,9 @@ class CmsTest(TestCase):
                 'issuer': issuer_certificate['tbs_certificate']['subject'],
                 'serial_number': certificate['tbs_certificate']['serial_number']}})
         signer_info['digest_algorithm'] = signature_algorithm
-        # signer_info['signed_attrs'] = signed_attributes
+        signer_info['signed_attrs'] = signed_attributes
         signer_info['signature_algorithm'] = signature_algorithm_si
-        signer_info['signature'] = OctetString(sha256(enc_ci.dump()).digest())
+        signer_info['signature'] = OctetString(sha256(signed_attributes.dump()).digest())
 
         signer_infos = SignerInfos()
         signer_infos.append(signer_info)
@@ -133,7 +140,7 @@ class CmsTest(TestCase):
         signed_data['version'] = cms.CMSVersion(3)
         signed_data['digest_algorithms'] = digest_algorithms
         signed_data['encap_content_info'] = enc_ci
-        signed_data['certificates'] = certificates
+        # signed_data['certificates'] = certificates
         signed_data['signer_infos'] = signer_infos
 
         content_info = ContentInfo()
