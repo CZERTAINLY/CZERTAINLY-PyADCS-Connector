@@ -6,10 +6,12 @@ from asn1crypto.algos import DigestAlgorithm, DigestAlgorithmId, SignedDigestAlg
 from asn1crypto.cms import ContentInfo, DigestAlgorithms, SignedData, SignerInfo, SignerInfos, CertificateSet, \
     CMSAttributes, CMSAttribute
 from asn1crypto.core import OctetBitString, ParsableOctetString, SequenceOf, SetOf, OctetString, Null, ObjectIdentifier, \
-    Set, UTCTime, Sequence
-from asn1crypto.csr import CRIAttributes
+    Set, UTCTime, Sequence, UTF8String, BMPString, AbstractString
+from asn1crypto.csr import CRIAttributes, CRIAttribute, SetOfExtensions, CSRAttributeType
+from asn1crypto.x509 import Extension, Extensions
 from django.test import TestCase
 
+from PyADCSConnector.utils.adcs_asn1 import CertificateTemplateOid
 from PyADCSConnector.utils.cmc import PKIData, TaggedCertificationRequest, TaggedRequest, TaggedRequests, \
     TaggedAttributes, OtherMsgs, TaggedContentInfos
 from PyADCSConnector.utils.crmf import CertReqMsg, CertificationRequestNullSigned
@@ -31,7 +33,41 @@ class CmsTest(TestCase):
         cri['version'] = csr.Version(0)
         cri['subject'] = crmf_CertReqMsg['certReq']['certTemplate']['subject']
         cri['subject_pk_info'] = crmf_CertReqMsg['certReq']['certTemplate']['publicKey']
-        cri['attributes'] = CRIAttributes(SetOf())
+
+        cri_attributes = CRIAttributes()
+        extension_cri_attr = CRIAttribute()
+        extension_cri_attr['type'] = CSRAttributeType('extension_request')
+
+        # -----------------------------------------------------------
+        # attributes for certificate template v1
+        # -----------------------------------------------------------
+        # extension = Extension()
+        # extension['extn_id'] = 'microsoft_enroll_certtype'
+        # extension['extn_value'] = 'Administrator'
+
+        # -----------------------------------------------------------
+        # attributes for certificate template v2,3,4
+        # -----------------------------------------------------------
+        template_v2 = Extension()
+        template_v2['extn_id'] = '1.3.6.1.4.1.311.21.7'
+
+        cert_template_oid = CertificateTemplateOid()
+        cert_template_oid['templateID'] = ObjectIdentifier('1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.4506045.4701483')
+        cert_template_oid['templateMajorVersion'] = 100
+        cert_template_oid['templateMinorVersion'] = 3
+
+        template_v2['extn_value'] = cert_template_oid.dump()
+
+        extensions = Extensions()
+        # extensions.append(extension)
+        extensions.append(template_v2)
+        extensions_set = SetOfExtensions()
+        extensions_set.append(extensions)
+        extension_cri_attr['values'] = extensions_set
+
+        cri_attributes.append(extension_cri_attr)
+
+        cri['attributes'] = cri_attributes
 
         # create challenge_password attribute
         # cri_attribute = CRIAttribute()
