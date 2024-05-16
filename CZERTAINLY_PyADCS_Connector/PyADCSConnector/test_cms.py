@@ -188,10 +188,19 @@ class CmsTest(TestCase):
         print(base64.b64encode(content_info.dump()))
 
     def test_cms_util(self):
-        crmf_encoded = "MIICXzCCAUMCAQEwggE8pRQwEjEQMA4GA1UEAwwHRXhhbXBsZaaCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJoxEI0LamnXx2ouvcttJWuf5tAQxWhM4Heff2D5fWUEktg/jItDr20CZ5iWdXh+dGY2i9HrHxZFZYIDENWZRg3ue5F8UKHwoqfoJ1r1+9HP1k2i7FbECM6COW3hR0/P1qNUlxi/h5Vh6OmcI65Y3eo74SnnSEc2YLKkP2DI1E7Fs0qlgGamEK/9zAS/TLS5ukY20h09UGMpPhgi9VKpf6NetnKQwFNEI0klwGEuxNnlQEwshjE/qtD3hac5pQSNkIRobCnJtWlU6u6/XByRCt5A1UrCpiFySgjXjZuEKYBH5umCdYpDfo3td9SU8pD2YPpRJXqYAzx9F9/iBkHa+6ECAwEAAaGCARQwDQYJKoZIhvcNAQELBQADggEBACj+z6d+wjMroanC1XysAcpIPck1Na0mkz84SFna+QUS6MmL3/gzXB/EPRSuPhH43V3sfLDMEuo/yygCLSuVkS6ywD3jgNiFe5kNrm5jnbF1vDLBN7i5Wqm9eHibiM4974gU44uOSgKGJPllceCLRtQI7c37wP1mcimt/jmIc6Oo3SYNa+IIQcZV4IysMMB0T+Gum8+ZmvAb5spe3hAJ1UHckZ5kk7EKSqI4ucsJWD16xQq2in+H/CTWX1rxD213dyulebq1qpjjor9cFNSGicq5K9pt2PC2Hy+wJW/IDUIF08ccpODGC1tTZwRK65mVCt7lAP9P4Tfu7LMDdORkNwQ="
+        crmf_encoded = "MIIDHTCCAxkwggH9AgEAMIIB9qNmMGQxDzANBgNVBAoMBnRvY2VjejEmMCQGA1UEAwwdZGV2ZWxvcC5sb2NhbGhvc3QubG9jYWxkb21haW4xKTAnBgkqhkiG9w0BCQEWGnJvb3RAbG9jYWxob3N0LmxvY2FsZG9tYWlupWYwZDEPMA0GA1UECgwGdG9jZWN6MSYwJAYDVQQDDB1kZXZlbG9wLmxvY2FsaG9zdC5sb2NhbGRvbWFpbjEpMCcGCSqGSIb3DQEJARYacm9vdEBsb2NhbGhvc3QubG9jYWxkb21haW6mggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDIrii/N6zI35rtw6sYmApohhNqOXRa8ktsqDPROdzdNc55aBVyTQFvf0z1XRi26l4GhsUv3KpLVTLV3vrCXtOTAeZccQgNqfKqDIVByjzWxGxFMuiTwpToB+a/CqXblaavTlyrv9varnxBEDjXK7H5iA4U+HxhM+WWidcSstnqGG8CnTmWS9cnj163zF01JzQANuIXKQ1CvJkHaMidbj5n5+w/nU/73BZEhnKivbOw3WWgVlV7fnR325FCF25J4AzJ2YyXo0Xu95cH0psjX0DM/ZroV+geiPZgGUp8cszkNYJMg5vHXSIQnYDDhDyiACy0QUqpxmK2iZdAqpTeI2W7AgMBAAGhggEUMA0GCSqGSIb3DQEBCwUAA4IBAQAeIxAUbjTOqCwl1egb7+Sr2U9kA65+tgydM5zYmc1qcOBFAo+ngMAD8WaG3hJRZgjGQP/HYxmx7lJAYU6RwvgD+c0bOHuB7kawFL1oyv0zhOVUnKmLrERVTjq1PYNYaEt3dfsrhGy1aziyyH4K4nOmBwINzJmy0wuPI8MeCbBTlu4V3hdmo8OpruCHxN2CgsxyrMwcPLUXQFy3lMhx3Mfc3ht7u8eFcaKLbraxmDDwtZbtoEcBTZFFrKoFkJERXZGiVRNkuk/vIc/ZpRvwg1y5CvbPCgj3CRbwrwOfXSWRYG7R7SJDMJTfOlAPt7GksF/kQr7aakQcsf9wBQ4K1HjE"
         ca_name = 'Authority'
         template_v1 = TemplateData('temp_1', 'temp_displ', 1, 1, '1.2.3')
-        create_cms(crmf_encoded, ca_name, template_v1)
+        cms_v1 = create_cms(crmf_encoded, ca_name, template_v1)
+        cms_object = ContentInfo.load(base64.b64decode(cms_v1))
+        pki_data = PKIData.load(cms_object['content']['encap_content_info']['content'].native)
+        cert_request = pki_data['reqSequence'][0].chosen['certificationRequest']
+        # Check if hash value of the Certificate Request Info has expected value
+        self.assertEquals(base64.b64encode(cert_request['signature'].native), b'o0u2GtvTOjTU8CmKAjKJ6cwqmGqgGVDR9CpYSkqjbGY=')
+        # Check if Certificate Template extension has correct value
+        extension = cert_request['certification_request_info']['attributes'][0]['values'][0][0]
+        self.assertEquals(extension['extn_value'].native, template_v1.name)
+
         template_v2 = TemplateData('temp_1', 'temp_displ', 1, 2, '1.2.3')
         create_cms(crmf_encoded, ca_name, template_v2)
 
