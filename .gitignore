@@ -243,3 +243,4 @@ fabric.properties
 # Downloaded chart dependencies
 **/charts/*.tgz
 *.tgz
+CZERTAINLY_PyADCS_Connector/PyADCSConnector/test_asn1.py

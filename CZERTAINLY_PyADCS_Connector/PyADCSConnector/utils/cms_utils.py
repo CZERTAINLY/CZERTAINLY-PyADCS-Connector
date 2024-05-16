@@ -12,7 +12,7 @@ from asn1crypto.x509 import Extension, Extensions, Name
 from PyADCSConnector.utils.adcs_asn1 import CertificateTemplateOid
 from PyADCSConnector.utils.cmc import PKIData, TaggedCertificationRequest, TaggedRequest, TaggedRequests, \
     TaggedAttributes, TaggedContentInfos, OtherMsgs
-from PyADCSConnector.utils.crmf import CertificationRequestNullSigned, CertReqMsg
+from PyADCSConnector.utils.crmf import CertificationRequestNullSigned, CertReqMessages
 
 
 def create_cms(crmf, ca_name, template):
@@ -26,7 +26,7 @@ def create_cms(crmf, ca_name, template):
 
 
 def convert_crmf_to_null_signed_pkcs10(encoded, template):
-    cert_req_msq = CertReqMsg.load(base64.b64decode(encoded))
+    cert_req_msq = CertReqMessages.load(base64.b64decode(encoded))[0]
     # Create CRI
     cri = CertificationRequestInfo()
     cri['version'] = Version(0)
@@ -44,6 +44,7 @@ def convert_crmf_to_null_signed_pkcs10(encoded, template):
         # Create Certificate Template OID
         cert_template_oid = CertificateTemplateOid()
         cert_template_oid['templateID'] = ObjectIdentifier(template.oid)
+        # Schema version - major.minor
         cert_template_oid['templateMajorVersion'] = template.schema_version
         cert_template_oid['templateMinorVersion'] = template.version
         extension['extn_value'] = cert_template_oid.dump()
