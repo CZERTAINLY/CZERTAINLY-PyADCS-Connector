@@ -5,7 +5,8 @@ from asn1crypto.algos import DigestAlgorithm, DigestAlgorithmId, SignedDigestAlg
 from asn1crypto.cms import ContentInfo, ContentType, SignedData, CMSVersion, DigestAlgorithms, \
     EncapsulatedContentInfo, SignerInfos, SignerInfo, CMSAttributes, CMSAttribute, IssuerAndSerialNumber
 from asn1crypto.core import OctetBitString, SequenceOf, ObjectIdentifier, ParsableOctetString, OctetString, Null
-from asn1crypto.csr import SetOfExtensions, CRIAttributes, CRIAttribute, CSRAttributeType
+from asn1crypto.csr import SetOfExtensions, CRIAttributes, CRIAttribute, CSRAttributeType, CertificationRequestInfo, \
+    Version
 from asn1crypto.x509 import Extension, Extensions, Name
 
 from PyADCSConnector.utils.adcs_asn1 import CertificateTemplateOid
@@ -27,8 +28,8 @@ def create_cms(crmf, ca_name, template):
 def convert_crmf_to_null_signed_pkcs10(encoded, template):
     cert_req_msq = CertReqMsg.load(base64.b64decode(encoded))
     # Create CRI
-    cri = csr.CertificationRequestInfo()
-    cri['version'] = csr.Version(0)
+    cri = CertificationRequestInfo()
+    cri['version'] = Version(0)
     cri['subject'] = cert_req_msq['certReq']['certTemplate']['subject']
     cri['subject_pk_info'] = cert_req_msq['certReq']['certTemplate']['publicKey']
 

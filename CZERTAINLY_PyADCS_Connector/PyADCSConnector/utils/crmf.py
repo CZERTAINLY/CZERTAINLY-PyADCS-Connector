@@ -2,7 +2,7 @@ from asn1crypto.algos import DigestAlgorithm
 from asn1crypto.cms import EnvelopedData
 from asn1crypto.core import Sequence, SequenceOf, Choice, Null, BitString, Integer, ObjectIdentifier, Any, \
     OctetBitString
-from asn1crypto.csr import Version
+from asn1crypto.csr import Version, CertificationRequestInfo
 from asn1crypto.x509 import GeneralName, AlgorithmIdentifier, Name, Extensions, Time, PublicKeyInfo
 
 
@@ -105,7 +105,7 @@ class CRMF(Sequence):
 
 class CertificationRequestNullSigned(Sequence):
     _fields = [
-        ('certification_request_info', csr.CertificationRequestInfo),
+        ('certification_request_info', CertificationRequestInfo),
         ('signature_algorithm', DigestAlgorithm),
         ('signature', OctetBitString),
     ]
