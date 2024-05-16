@@ -196,10 +196,10 @@ class CmsTest(TestCase):
         pki_data = PKIData.load(cms_object['content']['encap_content_info']['content'].native)
         cert_request = pki_data['reqSequence'][0].chosen['certificationRequest']
         # Check if hash value of the Certificate Request Info has expected value
-        self.assertEquals(base64.b64encode(cert_request['signature'].native), b'o0u2GtvTOjTU8CmKAjKJ6cwqmGqgGVDR9CpYSkqjbGY=')
+        self.assertEqual(base64.b64encode(cert_request['signature'].native), b'o0u2GtvTOjTU8CmKAjKJ6cwqmGqgGVDR9CpYSkqjbGY=')
         # Check if Certificate Template extension has correct value
         extension = cert_request['certification_request_info']['attributes'][0]['values'][0][0]
-        self.assertEquals(extension['extn_value'].native, template_v1.name)
+        self.assertEqual(extension['extn_value'].native, template_v1.name)
 
         template_v2 = TemplateData('temp_1', 'temp_displ', 1, 2, '1.2.3')
         create_cms(crmf_encoded, ca_name, template_v2)
