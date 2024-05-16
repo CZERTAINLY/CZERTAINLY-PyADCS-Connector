@@ -1,11 +1,5 @@
-from asn1crypto import csr
-from asn1crypto._errors import unwrap
-from asn1crypto._types import int_types, type_name
-from asn1crypto.algos import DigestAlgorithm
 from asn1crypto.cms import ContentInfo
-from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Choice, SetOf, OctetString, Any, OctetBitString, \
-    Integer
-from asn1crypto.csr import CertificationRequest
+from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Choice, SetOf, Any, Integer
 
 from PyADCSConnector.utils.crmf import CertReqMsg, CertificationRequestNullSigned
 

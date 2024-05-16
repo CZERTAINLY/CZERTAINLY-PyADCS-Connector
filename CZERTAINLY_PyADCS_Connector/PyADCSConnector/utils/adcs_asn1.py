@@ -1,8 +1,4 @@
-from asn1crypto.cms import ContentInfo
-from asn1crypto.cms import ContentInfo
-from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Choice, SetOf, Any, Integer
-
-from PyADCSConnector.utils.crmf import CertReqMsg, CertificationRequestNullSigned
+from asn1crypto.core import Sequence, ObjectIdentifier, Integer
 
 
 class CertificateTemplateOid(Sequence):

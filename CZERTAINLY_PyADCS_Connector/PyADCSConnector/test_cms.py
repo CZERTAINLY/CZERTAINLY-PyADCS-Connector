@@ -5,8 +5,7 @@ from asn1crypto import cms, csr, x509
 from asn1crypto.algos import DigestAlgorithm, DigestAlgorithmId, SignedDigestAlgorithm
 from asn1crypto.cms import ContentInfo, DigestAlgorithms, SignedData, SignerInfo, SignerInfos, CertificateSet, \
     CMSAttributes, CMSAttribute
-from asn1crypto.core import OctetBitString, ParsableOctetString, SequenceOf, SetOf, OctetString, Null, ObjectIdentifier, \
-    Set, UTCTime, Sequence, UTF8String, BMPString, AbstractString
+from asn1crypto.core import OctetBitString, ParsableOctetString, SequenceOf, OctetString, Null, ObjectIdentifier
 from asn1crypto.csr import CRIAttributes, CRIAttribute, SetOfExtensions, CSRAttributeType
 from asn1crypto.x509 import Extension, Extensions
 from django.test import TestCase
@@ -14,8 +13,8 @@ from django.test import TestCase
 from PyADCSConnector.utils.adcs_asn1 import CertificateTemplateOid
 from PyADCSConnector.utils.cmc import PKIData, TaggedCertificationRequest, TaggedRequest, TaggedRequests, \
     TaggedAttributes, OtherMsgs, TaggedContentInfos
-from PyADCSConnector.utils.crmf import CertReqMsg, CertificationRequestNullSigned
 from PyADCSConnector.utils.cms_utils import create_cms
+from PyADCSConnector.utils.crmf import CertReqMsg, CertificationRequestNullSigned
 from PyADCSConnector.utils.dump_parser import TemplateData
 
 

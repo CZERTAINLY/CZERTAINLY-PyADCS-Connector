@@ -14,8 +14,8 @@ from PyADCSConnector.services.attributes.raprofile_attributes import RAPROFILE_T
     RAPROFILE_SELECT_CA_METHOD_ATTRIBUTE_NAME, RAPROFILE_CA_NAME_ATTRIBUTE_NAME, RAPROFILE_CONFIGSTRING_ATTRIBUTE_NAME
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
+from PyADCSConnector.utils.cms_utils import create_cms
 from PyADCSConnector.utils.dump_parser import TemplateData, DumpParser, AuthorityData
-from PyADCSConnector.utils.cms_utils import convert_crmf_to_null_signed_pkcs10, create_cms
 
 logger = logging.getLogger(__name__)
 

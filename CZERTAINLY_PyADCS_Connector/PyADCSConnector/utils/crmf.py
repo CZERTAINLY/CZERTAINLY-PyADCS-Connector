@@ -1,4 +1,3 @@
-from asn1crypto import csr
 from asn1crypto.algos import DigestAlgorithm
 from asn1crypto.cms import EnvelopedData
 from asn1crypto.core import Sequence, SequenceOf, Choice, Null, BitString, Integer, ObjectIdentifier, Any, \

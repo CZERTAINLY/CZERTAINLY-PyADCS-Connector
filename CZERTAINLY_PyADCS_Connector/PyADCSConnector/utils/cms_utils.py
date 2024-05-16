@@ -1,18 +1,17 @@
 import base64
 from hashlib import sha256
 
-from asn1crypto import csr
 from asn1crypto.algos import DigestAlgorithm, DigestAlgorithmId, SignedDigestAlgorithm
-from asn1crypto.cms import ContentInfo, ContentType, SignedData, CMSVersion, DigestAlgorithms, EncapsulatedContentInfo, \
-    SignerInfos, SignerInfo, SignerIdentifier, CMSAttributes, CMSAttribute, IssuerAndSerialNumber
+from asn1crypto.cms import ContentInfo, ContentType, SignedData, CMSVersion, DigestAlgorithms, \
+    EncapsulatedContentInfo, SignerInfos, SignerInfo, CMSAttributes, CMSAttribute, IssuerAndSerialNumber
 from asn1crypto.core import OctetBitString, SequenceOf, ObjectIdentifier, ParsableOctetString, OctetString, Null
 from asn1crypto.csr import SetOfExtensions, CRIAttributes, CRIAttribute, CSRAttributeType
 from asn1crypto.x509 import Extension, Extensions, Name
 
+from PyADCSConnector.utils.adcs_asn1 import CertificateTemplateOid
+from PyADCSConnector.utils.cmc import PKIData, TaggedCertificationRequest, TaggedRequest, TaggedRequests, \
+    TaggedAttributes, TaggedContentInfos, OtherMsgs
 from PyADCSConnector.utils.crmf import CertificationRequestNullSigned, CertReqMsg
-from utils.adcs_asn1 import CertificateTemplateOid
-from utils.cmc import PKIData, TaggedCertificationRequest, TaggedRequest, TaggedRequests, TaggedAttributes, \
-    TaggedContentInfos, OtherMsgs
 
 
 def create_cms(crmf, ca_name, template):
