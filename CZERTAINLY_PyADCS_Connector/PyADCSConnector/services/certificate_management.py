@@ -93,7 +93,7 @@ def identify(request_dto, uuid):
 
 def issue_new_certificate(uuid, certificate_request, request_format, ca: AuthorityData, template: TemplateData):
     if request_format == "crmf":
-        certificate_request = create_cms(certificate_request, ca.name, template)
+        certificate_request = create_cms(certificate_request, ca.name, template).decode()
     session = create_session_from_authority_instance_uuid(uuid)
     session.connect()
     result = session.run_ps(submit_certificate_request_script(certificate_request, ca, template))
