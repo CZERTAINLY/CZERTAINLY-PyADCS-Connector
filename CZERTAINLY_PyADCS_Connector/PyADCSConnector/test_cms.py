@@ -190,7 +190,7 @@ class CmsTest(TestCase):
     def test_cms_util(self):
         crmf_encoded = "MIIDHTCCAxkwggH9AgEAMIIB9qNmMGQxDzANBgNVBAoMBnRvY2VjejEmMCQGA1UEAwwdZGV2ZWxvcC5sb2NhbGhvc3QubG9jYWxkb21haW4xKTAnBgkqhkiG9w0BCQEWGnJvb3RAbG9jYWxob3N0LmxvY2FsZG9tYWlupWYwZDEPMA0GA1UECgwGdG9jZWN6MSYwJAYDVQQDDB1kZXZlbG9wLmxvY2FsaG9zdC5sb2NhbGRvbWFpbjEpMCcGCSqGSIb3DQEJARYacm9vdEBsb2NhbGhvc3QubG9jYWxkb21haW6mggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDIrii/N6zI35rtw6sYmApohhNqOXRa8ktsqDPROdzdNc55aBVyTQFvf0z1XRi26l4GhsUv3KpLVTLV3vrCXtOTAeZccQgNqfKqDIVByjzWxGxFMuiTwpToB+a/CqXblaavTlyrv9varnxBEDjXK7H5iA4U+HxhM+WWidcSstnqGG8CnTmWS9cnj163zF01JzQANuIXKQ1CvJkHaMidbj5n5+w/nU/73BZEhnKivbOw3WWgVlV7fnR325FCF25J4AzJ2YyXo0Xu95cH0psjX0DM/ZroV+geiPZgGUp8cszkNYJMg5vHXSIQnYDDhDyiACy0QUqpxmK2iZdAqpTeI2W7AgMBAAGhggEUMA0GCSqGSIb3DQEBCwUAA4IBAQAeIxAUbjTOqCwl1egb7+Sr2U9kA65+tgydM5zYmc1qcOBFAo+ngMAD8WaG3hJRZgjGQP/HYxmx7lJAYU6RwvgD+c0bOHuB7kawFL1oyv0zhOVUnKmLrERVTjq1PYNYaEt3dfsrhGy1aziyyH4K4nOmBwINzJmy0wuPI8MeCbBTlu4V3hdmo8OpruCHxN2CgsxyrMwcPLUXQFy3lMhx3Mfc3ht7u8eFcaKLbraxmDDwtZbtoEcBTZFFrKoFkJERXZGiVRNkuk/vIc/ZpRvwg1y5CvbPCgj3CRbwrwOfXSWRYG7R7SJDMJTfOlAPt7GksF/kQr7aakQcsf9wBQ4K1HjE"
         ca_name = 'Authority'
-        template_v1 = TemplateData('temp_1', 'temp_displ', 1, 1, '1.2.3')
+        template_v1 = TemplateData('temp_1', 'temp_displ', '1', '1', '1.2.3')
         cms_v1 = create_cms(crmf_encoded, ca_name, template_v1)
         cms_object = ContentInfo.load(base64.b64decode(cms_v1))
         pki_data = PKIData.load(cms_object['content']['encap_content_info']['content'].native)
@@ -201,7 +201,7 @@ class CmsTest(TestCase):
         extension = cert_request['certification_request_info']['attributes'][0]['values'][0][0]
         self.assertEqual(extension['extn_value'].native, template_v1.name)
 
-        template_v2 = TemplateData('temp_1', 'temp_displ', 1, 2, '1.2.3')
+        template_v2 = TemplateData('temp_1', 'temp_displ', '1', '2', '1.2.3')
         create_cms(crmf_encoded, ca_name, template_v2)
 
 

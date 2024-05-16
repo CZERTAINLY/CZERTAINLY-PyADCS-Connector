@@ -13,9 +13,10 @@ from PyADCSConnector.utils.adcs_asn1 import CertificateTemplateOid
 from PyADCSConnector.utils.cmc import PKIData, TaggedCertificationRequest, TaggedRequest, TaggedRequests, \
     TaggedAttributes, TaggedContentInfos, OtherMsgs
 from PyADCSConnector.utils.crmf import CertificationRequestNullSigned, CertReqMessages
+from PyADCSConnector.utils.dump_parser import TemplateData
 
 
-def create_cms(crmf, ca_name, template):
+def create_cms(crmf, ca_name, template: TemplateData):
     pkcs10 = convert_crmf_to_null_signed_pkcs10(crmf, template)
     pki_data = create_pki_data(pkcs10)
     content_info = ContentInfo()
@@ -25,7 +26,7 @@ def create_cms(crmf, ca_name, template):
     return base64.b64encode(content_info.dump())
 
 
-def convert_crmf_to_null_signed_pkcs10(encoded, template):
+def convert_crmf_to_null_signed_pkcs10(encoded, template: TemplateData):
     cert_req_msq = CertReqMessages.load(base64.b64decode(encoded))[0]
     # Create CRI
     cri = CertificationRequestInfo()
@@ -36,7 +37,7 @@ def convert_crmf_to_null_signed_pkcs10(encoded, template):
     # Create Extension Request Based on Certificate Template
     extension = Extension()
 
-    if template.version == 1:
+    if template.schema_version == '1':
         extension['extn_id'] = 'microsoft_enroll_certtype'
         extension['extn_value'] = template.name
     else:
@@ -45,8 +46,9 @@ def convert_crmf_to_null_signed_pkcs10(encoded, template):
         cert_template_oid = CertificateTemplateOid()
         cert_template_oid['templateID'] = ObjectIdentifier(template.oid)
         # Schema version - major.minor
-        cert_template_oid['templateMajorVersion'] = template.schema_version
-        cert_template_oid['templateMinorVersion'] = template.version
+        versions = template.version.split('.')
+        cert_template_oid['templateMajorVersion'] = int(versions[0])
+        cert_template_oid['templateMinorVersion'] = int(versions[1])
         extension['extn_value'] = cert_template_oid.dump()
 
     extensions = Extensions()
