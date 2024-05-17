@@ -49,9 +49,3 @@ class CmsTest(TestCase):
         self.assertEqual(cert_template_oid['templateID'].native, template_v2.oid)
         self.assertEqual(str(cert_template_oid['templateMajorVersion'].native), template_v2.version.split('.')[0])
         self.assertEqual(str(cert_template_oid['templateMinorVersion'].native), template_v2.version.split('.')[1])
-
-
-
-
-
-

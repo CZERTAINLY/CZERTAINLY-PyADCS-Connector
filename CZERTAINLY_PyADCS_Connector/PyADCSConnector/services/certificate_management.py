@@ -22,37 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 def issue(request_dto, uuid):
-    ca = get_ca_from_attributes(request_dto)
-
-    template = TemplateData.from_dict(
-        attribute_definition_utils.get_attribute_value(
-            RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, request_dto["raProfileAttributes"]))
-
-    try:
-        request_format = CertificateRequestFormat(request_dto["format"])
-    except ValueError:
-        raise ValidationException("Certificate request format '" + request_dto["format"] + "' is not supported.")
-
-    return issue_new_certificate(uuid, request_dto["request"], request_format, ca, template)
+    logger.debug("Issuing new certificate with request: %s" % request_dto["request"])
+    return prepare_and_issue(request_dto, uuid)
 
 
 def renew(request_dto, uuid):
-    ca = get_ca_from_attributes(request_dto)
-
-    template = TemplateData.from_dict(
-        attribute_definition_utils.get_attribute_value(
-            RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, request_dto["raProfileAttributes"]))
-
     serial_number = get_certificate_serial_number(request_dto["certificate"])
-
     logger.debug("Renew certificate with serial number %s" % serial_number)
-
-    try:
-        request_format = CertificateRequestFormat(request_dto["format"])
-    except ValueError:
-        raise ValidationException("Certificate request format '" + request_dto["format"] + "' is not supported.")
-
-    return issue_new_certificate(uuid, request_dto["request"], request_format, ca, template)
+    return prepare_and_issue(request_dto, uuid)
 
 
 def revoke(request_dto, uuid):
@@ -102,6 +79,21 @@ def identify(request_dto, uuid):
                                       " RA Profile attributes")
 
 
+def prepare_and_issue(request_dto, uuid):
+    ca = get_ca_from_attributes(request_dto)
+
+    template = TemplateData.from_dict(
+        attribute_definition_utils.get_attribute_value(
+            RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, request_dto["raProfileAttributes"]))
+
+    try:
+        request_format = CertificateRequestFormat(request_dto["format"])
+    except ValueError:
+        raise ValidationException("Certificate request format '" + request_dto["format"] + "' is not supported.")
+
+    return issue_new_certificate(uuid, request_dto["request"], request_format, ca, template)
+
+
 def issue_new_certificate(uuid, certificate_request, request_format: CertificateRequestFormat, ca: AuthorityData,
                           template: TemplateData):
     if request_format == CertificateRequestFormat.CRMF:
@@ -115,7 +107,7 @@ def issue_new_certificate(uuid, certificate_request, request_format: Certificate
     certificate = get_certificate_data(result)
     # If certificate is empty
     if not certificate:
-        raise ValidationException("Output of the certificate is empty")
+        raise ValidationException("Output of the certificate is empty, check the logs of the ADCS server.")
 
     certificate_dto = CertificateDto(certificate, None, None)
     return certificate_dto

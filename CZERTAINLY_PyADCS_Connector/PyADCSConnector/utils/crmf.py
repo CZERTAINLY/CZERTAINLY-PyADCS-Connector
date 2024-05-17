@@ -5,7 +5,7 @@ from asn1crypto.core import Sequence, SequenceOf, Choice, Null, BitString, Integ
 from asn1crypto.csr import Version, CertificationRequestInfo
 from asn1crypto.x509 import GeneralName, AlgorithmIdentifier, Name, Extensions, Time, PublicKeyInfo
 
-"""ASN.1 type classes for Certificate Request Message Format, as specified by RFC 4211 Standard."""
+"""ASN.1 type classes for Certificate Request Message Format, as specified by RFC 4211."""
 
 
 class AttributeTypeAndValue(Sequence):

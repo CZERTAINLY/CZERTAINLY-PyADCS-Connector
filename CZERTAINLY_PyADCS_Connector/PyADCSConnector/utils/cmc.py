@@ -3,7 +3,7 @@ from asn1crypto.core import Sequence, SequenceOf, ObjectIdentifier, Choice, SetO
 
 from PyADCSConnector.utils.crmf import CertReqMsg, CertificationRequestNullSigned
 
-"""ASN.1 type classes for  Certificate Management protocol using CMS, as specified by RFC 2797 Standard."""
+"""ASN.1 type classes for Certificate Management protocol using CMS, as specified by RFC 2797."""
 
 
 class AttributeValueOid(ObjectIdentifier):
