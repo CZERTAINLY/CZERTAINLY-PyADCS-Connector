@@ -129,7 +129,8 @@ def create_signer_infos(ca_name, eci_content):
     signer_info = SignerInfo()
     signer_info['version'] = CMSVersion(1)  # because the sid is issuer_and_serial_number
 
-    # Issuer is the name of certification authority, serial number is a random number, since the signer certificate is not present
+    # Issuer is the name of certification authority, serial number is a random number,
+    # since the signer certificate is not present
     issuer_and_serial_number = IssuerAndSerialNumber()
     issuer_and_serial_number['issuer'] = Name.build({'common_name': ca_name})
     issuer_and_serial_number['serial_number'] = 123456789
@@ -137,16 +138,18 @@ def create_signer_infos(ca_name, eci_content):
 
     digest_algorithm = DigestAlgorithm()
     digest_algorithm['algorithm'] = DigestAlgorithmId('sha256')
+    digest_algorithm['parameters'] = None
     signer_info['digest_algorithm'] = digest_algorithm
 
-    signer_info['signed_attrs'] = create_signed_attributes(eci_content)
+    signed_attributes = create_signed_attributes(eci_content)
+    signer_info['signed_attrs'] = signed_attributes
 
     signature_algorithm = SignedDigestAlgorithm()
     signature_algorithm['algorithm'] = '1.3.6.1.5.5.7.6.2'
     signature_algorithm['parameters'] = Null()
     signer_info['signature_algorithm'] = signature_algorithm
 
-    signer_info['signature'] = OctetString(sha256(signer_info['signed_attrs'].dump()).digest())
+    signer_info['signature'] = OctetString(sha256(signed_attributes.dump()).digest())
 
     signer_infos = SignerInfos()
     signer_infos.append(signer_info)
@@ -161,9 +164,10 @@ def create_signed_data(pki_data, ca_name):
     digest_algorithms = DigestAlgorithms()
     digest_algorithm = DigestAlgorithm()
     digest_algorithm['algorithm'] = DigestAlgorithmId('sha256')
+    digest_algorithm['parameters'] = None
     digest_algorithms.append(digest_algorithm)
-    signed_data['digest_algorithms'] = digest_algorithms
 
+    signed_data['digest_algorithms'] = digest_algorithms
     signed_data['encap_content_info'] = create_encap_content_info(pki_data)
     signed_data['signer_infos'] = create_signer_infos(ca_name, signed_data['encap_content_info']['content'])
 
