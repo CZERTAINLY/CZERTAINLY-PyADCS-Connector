@@ -5,6 +5,8 @@ from asn1crypto.core import Sequence, SequenceOf, Choice, Null, BitString, Integ
 from asn1crypto.csr import Version, CertificationRequestInfo
 from asn1crypto.x509 import GeneralName, AlgorithmIdentifier, Name, Extensions, Time, PublicKeyInfo
 
+"""ASN.1 type classes for Certificate Request Message Format, as specified by RFC 4211 Standard."""
+
 
 class AttributeTypeAndValue(Sequence):
     _fields = [('type', ObjectIdentifier),
@@ -99,10 +101,7 @@ class CertReqMessages(SequenceOf):
     _child_spec = CertReqMsg
 
 
-class CRMF(Sequence):
-    _fields = [('crms', CertReqMessages)]
-
-
+# Class allowing to pass digest algorithm as signature_algorithm in Certification Request
 class CertificationRequestNullSigned(Sequence):
     _fields = [
         ('certification_request_info', CertificationRequestInfo),

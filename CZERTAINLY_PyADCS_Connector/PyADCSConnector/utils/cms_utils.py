@@ -17,6 +17,10 @@ from PyADCSConnector.utils.dump_parser import TemplateData
 
 
 def create_cms(crmf, ca_name, template: TemplateData):
+    """
+    Create new certificate request using CMS and CMC Request Formats according to [MS-WCCE] document,
+    defined in chapter 3.1.1.4.3.1.3.
+    """
     pkcs10 = convert_crmf_to_null_signed_pkcs10(crmf, template)
     pki_data = create_pki_data(pkcs10)
     content_info = ContentInfo()
@@ -27,6 +31,7 @@ def create_cms(crmf, ca_name, template: TemplateData):
 
 
 def convert_crmf_to_null_signed_pkcs10(encoded, template: TemplateData):
+    """Convert request in CRMF format to PKCS#10 format with Null Signature, see [MS-WCCE] chapter 2.2.2.6.5"""
     cert_req_msq = CertReqMessages.load(base64.b64decode(encoded))[0]
     # Create CRI
     cri = CertificationRequestInfo()
@@ -45,7 +50,6 @@ def convert_crmf_to_null_signed_pkcs10(encoded, template: TemplateData):
         # Create Certificate Template OID
         cert_template_oid = CertificateTemplateOid()
         cert_template_oid['templateID'] = ObjectIdentifier(template.oid)
-        # Schema version - major.minor
         versions = template.version.split('.')
         cert_template_oid['templateMajorVersion'] = int(versions[0])
         cert_template_oid['templateMinorVersion'] = int(versions[1])
@@ -81,6 +85,8 @@ def convert_crmf_to_null_signed_pkcs10(encoded, template: TemplateData):
 
 
 def create_pki_data(pkcs10):
+    """Create CMC request structure containing Null Signature PKCS#10 Request,
+    according to [MS-WCCE] chapter 3.1.1.4.3.1.3. """
     pki_data = PKIData()
 
     tagged_csr = TaggedCertificationRequest()
@@ -103,6 +109,7 @@ def create_pki_data(pkcs10):
 
 
 def create_encap_content_info(pki_data):
+    """Create Encapsulated Content Info with CMC data as content. """
     encap_content_info = EncapsulatedContentInfo()
     encap_content_info['content_type'] = ContentType.map('1.3.6.1.5.5.7.12.2')
     encap_content_info['content'] = ParsableOctetString(pki_data.dump())
@@ -110,10 +117,15 @@ def create_encap_content_info(pki_data):
 
 
 def create_signed_attributes(eci_content):
+    """
+        Create Signed Attributes for Signer Info in Signed Data for CMS.
+        Since Encapsulated Content Info in Signed Data is not id-data type, they must consist
+        of the type of Encapsulated Content Info and of digest of Encapsulated Content Info content
+    """
     signed_attributes = CMSAttributes()
     attribute_content_type = CMSAttribute()
     attribute_content_type['type'] = '1.2.840.113549.1.9.3'  # PKCS#9 content type
-    attribute_content_type['values'] = ['1.3.6.1.5.5.7.12.2']
+    attribute_content_type['values'] = ['1.3.6.1.5.5.7.12.2'] 
 
     attribute_message_digest = CMSAttribute()
     attribute_message_digest['type'] = '1.2.840.113549.1.9.4'  # message digest
@@ -126,6 +138,10 @@ def create_signed_attributes(eci_content):
 
 
 def create_signer_infos(ca_name, eci_content):
+    """
+    Create Signer Infos consisting of a single Signer Info,
+    using the No-Signature Signature Mechanism, as specified in [RFC2797] section 3.3.3.1
+    """
     signer_info = SignerInfo()
     signer_info['version'] = CMSVersion(1)  # because the sid is issuer_and_serial_number
 
@@ -158,8 +174,9 @@ def create_signer_infos(ca_name, eci_content):
 
 
 def create_signed_data(pki_data, ca_name):
+    """Create Signed Data for CMS, see [MS-WCEE] chapter 3.1.1.4.3.1.3."""
     signed_data = SignedData()
-    signed_data['version'] = CMSVersion(3)
+    signed_data['version'] = CMSVersion(3)  # Since encapContentInfo eContentType is other than id-data
 
     digest_algorithms = DigestAlgorithms()
     digest_algorithm = DigestAlgorithm()
