@@ -16,6 +16,7 @@ from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.cms_utils import create_cms
 from PyADCSConnector.utils.dump_parser import TemplateData, DumpParser, AuthorityData
+from PyADCSConnector.objects.certificate_request_format import CertificateRequestFormat
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,12 @@ def issue(request_dto, uuid):
         attribute_definition_utils.get_attribute_value(
             RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, request_dto["raProfileAttributes"]))
 
-    return issue_new_certificate(uuid, request_dto["request"], request_dto["format"], ca, template)
+    try:
+        request_format = CertificateRequestFormat(request_dto["format"])
+    except ValueError:
+        raise ValidationException("Certificate request format '" + request_dto["format"] + "' is not supported.")
+
+    return issue_new_certificate(uuid, request_dto["request"], request_format, ca, template)
 
 
 def renew(request_dto, uuid):
@@ -41,7 +47,12 @@ def renew(request_dto, uuid):
 
     logger.debug("Renew certificate with serial number %s" % serial_number)
 
-    return issue_new_certificate(uuid, request_dto["pkcs10"], ca, template)
+    try:
+        request_format = CertificateRequestFormat(request_dto["format"])
+    except ValueError:
+        raise ValidationException("Certificate request format '" + request_dto["format"] + "' is not supported.")
+
+    return issue_new_certificate(uuid, request_dto["request"], request_format, ca, template)
 
 
 def revoke(request_dto, uuid):
@@ -91,8 +102,9 @@ def identify(request_dto, uuid):
                                       " RA Profile attributes")
 
 
-def issue_new_certificate(uuid, certificate_request, request_format, ca: AuthorityData, template: TemplateData):
-    if request_format == "crmf":
+def issue_new_certificate(uuid, certificate_request, request_format: CertificateRequestFormat, ca: AuthorityData,
+                          template: TemplateData):
+    if request_format == CertificateRequestFormat.CRMF:
         certificate_request = create_cms(certificate_request, ca.name, template).decode()
     session = create_session_from_authority_instance_uuid(uuid)
     session.connect()
