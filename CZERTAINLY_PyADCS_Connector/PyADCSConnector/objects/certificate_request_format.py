@@ -2,5 +2,5 @@ from enum import Enum
 
 
 class CertificateRequestFormat(Enum):
-    CRMF = 'crmf',
+    CRMF = 'crmf'
     PKCS10 = 'pkcs10'
