@@ -20,7 +20,7 @@ def issue_certificate(request, uuid, *args, **kwargs):
 def renew_certificate(request, uuid, *args, **kwargs):
     request_dto = json.loads(request.body)
     certificate_dto = renew(request_dto, uuid)
-    return JsonResponse(certificate_dto.__dict__, safe=False, content_type="application/json")
+    return JsonResponse(certificate_dto.to_json(), safe=False, content_type="application/json")
 
 
 @require_http_methods(["POST"])
