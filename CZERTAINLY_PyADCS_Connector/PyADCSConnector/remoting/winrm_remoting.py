@@ -80,6 +80,11 @@ def create_session_from_authority_instance(authority_instance):
     password = attribute_definition_utils.get_attribute_value("password",
                                                               authority_instance.credential.get("attributes"))
 
+    # check if password is in the form { "secret": "password" } and if yes, extract the password only
+    # this is related to the change in the CZERTAINLY version 2.12.0
+    if isinstance(password, dict):
+        password = password.get("secret")
+
     session = WinRmRemoting(username, password, authority_instance.address, authority_instance.https,
                             authority_instance.port)
     return session
