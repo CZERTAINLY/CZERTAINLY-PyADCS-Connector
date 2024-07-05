@@ -2,7 +2,8 @@ from PyADCSConnector.utils.dump_parser import AuthorityData, TemplateData
 from PyADCSConnector.utils.revocation_reason import CertificateRevocationReason
 
 IMPORT_MODULE = """Import-Module PSPKI
-$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()"""
+$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)"""
 
 
 def verify_connection_script():

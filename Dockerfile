@@ -5,7 +5,7 @@ ENV DJANGO_SETTINGS_MODULE=CZERTAINLY_PyADCS_Connector.settings
 ENV PYTHONUNBUFFERED=1
 
 RUN apk update && \
-  apk add --no-cache gcc python3-dev krb5-dev openssl-dev
+  apk add --no-cache gcc python3-dev krb5-dev openssl-dev libffi-dev
 
 FROM common-base as base-builder
 
