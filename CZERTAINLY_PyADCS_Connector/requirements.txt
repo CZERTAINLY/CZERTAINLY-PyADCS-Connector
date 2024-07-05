@@ -1,7 +1,7 @@
 Django==5.0.6
 asgiref==3.8.1
 asn1crypto==1.5.1
-certifi==2024.6.2
+certifi==2024.7.4
 cffi==1.16.0
 charset-normalizer==3.3.2
 cryptography==42.0.8
@@ -22,7 +22,7 @@ pywinrm==0.4.3
 requests==2.32.3
 requests-credssp==2.0.0
 requests-kerberos==0.15.0
-setuptools~=70.1.1
+setuptools~=70.2.0
 six==1.16.0
 sqlparse==0.5.0
 urllib3==2.2.2
