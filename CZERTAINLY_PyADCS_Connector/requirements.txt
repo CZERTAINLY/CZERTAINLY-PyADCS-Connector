@@ -1,4 +1,4 @@
-Django==5.0.6
+Django==5.0.8
 asgiref==3.8.1
 asn1crypto==1.5.1
 certifi==2024.7.4
