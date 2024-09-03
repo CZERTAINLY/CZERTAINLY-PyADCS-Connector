@@ -172,7 +172,7 @@ def get_discovery_history_data(discovery_history_request: DiscoveryHistoryReques
         #     discovery_id=discovery_history.id)[page_number * items_per_page:items_per_page]
         discovery_certificates = DiscoveryCertificate.objects.filter(
             discovery_id=discovery_history.id
-        )[page_number * items_per_page:(page_number + 1) * items_per_page]
+        ).order_by('uuid')[page_number * items_per_page:(page_number + 1) * items_per_page]
 
         discovery_history_response.certificate_data = [
             DiscoveryCertificateDto(val.uuid, val.base64content, val.meta).to_json()
