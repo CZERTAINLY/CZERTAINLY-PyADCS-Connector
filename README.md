@@ -1,6 +1,6 @@
 # CZERTAINLY-PyADCS-Connector
 
-> This repository is part of the open-source project CZERTAINLY. You can find more information about the project at [CZERTAINLY](https://github.com/3KeyCompany/CZERTAINLY) repository, including the contribution guide.
+> This repository is part of the open-source project CZERTAINLY. You can find more information about the project at [CZERTAINLY](https://github.com/CZERTAINLY/CZERTAINLY) repository, including the contribution guide.
 
 PyADCS `Connector` is the implementation of the following `Function Groups` and `Kinds`:
 
@@ -29,7 +29,7 @@ PyADCS `Connector` requires the PostgreSQL database version 12+.
 
 ## Docker container
 
-PyADCS `Connector` is provided as a Docker container. Use the `harbor.3key.company/czertainly/czertainly-pyadcs-connector:tagname` to pull the required image from the repository. It can be configured using the following environment variables:
+PyADCS `Connector` is provided as a Docker container. Use the `czertainly/czertainly-pyadcs-connector:tagname` to pull the required image from the repository. It can be configured using the following environment variables:
 
 | Variable                | Description                                                        | Required                                           | Default value |
 |-------------------------|--------------------------------------------------------------------|----------------------------------------------------|---------------|
