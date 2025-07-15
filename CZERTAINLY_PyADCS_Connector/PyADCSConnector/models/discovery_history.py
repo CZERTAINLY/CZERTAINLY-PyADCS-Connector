@@ -1,5 +1,7 @@
 import uuid
 import json
+
+from django.conf import settings
 from django.db import models
 
 
@@ -13,4 +15,4 @@ class DiscoveryHistory(models.Model):
         return json.dumps(self.__dict__)
 
     class Meta:
-        db_table = "discovery_history"
+        db_table = f'"{settings.DATABASE_SCHEMA}"."discovery_history"'

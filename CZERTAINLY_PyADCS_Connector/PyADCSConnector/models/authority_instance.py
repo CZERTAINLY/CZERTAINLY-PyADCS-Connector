@@ -1,5 +1,7 @@
 import uuid
 import json
+
+from django.conf import settings
 from django.db import models
 
 
@@ -18,4 +20,4 @@ class AuthorityInstance(models.Model):
         return json.dumps(self.__dict__)
 
     class Meta:
-        db_table = "authority_instance"
+        db_table = f'"{settings.DATABASE_SCHEMA}"."authority_instance"'

@@ -21,6 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 ADCS_SEARCH_PAGE_SIZE = env("ADCS_SEARCH_PAGE_SIZE", default=1000)
 
+# Prefix used for all database tables
+DATABASE_SCHEMA = env("DATABASE_SCHEMA", default="pyadcs")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -32,7 +35,6 @@ DEBUG = False
 
 # ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -77,7 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'CZERTAINLY_PyADCS_Connector.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -91,7 +92,6 @@ DATABASES = {
         'PORT': env("DATABASE_PORT", default="5432")
     },
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
