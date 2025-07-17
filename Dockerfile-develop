@@ -1,5 +1,5 @@
 # Build phase
-FROM python:3.12-alpine as build
+FROM python:3.13-alpine as build
 
 RUN apk update && \
   apk add --no-cache gcc python3-dev krb5-dev openssl-dev
