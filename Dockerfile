@@ -1,5 +1,5 @@
 # Dockerfile
-FROM python:3.12-alpine as common-base
+FROM python:3.13-alpine as common-base
 
 ENV DJANGO_SETTINGS_MODULE=CZERTAINLY_PyADCS_Connector.settings
 ENV PYTHONUNBUFFERED=1
