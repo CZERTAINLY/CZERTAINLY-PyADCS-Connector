@@ -8,7 +8,7 @@ COPY ./CZERTAINLY_PyADCS_Connector/requirements.txt /opt/czertainly/requirements
 RUN pip install -r /opt/czertainly/requirements.txt
 
 # Package phase
-FROM python:3.12-alpine
+FROM python:3.13-alpine
 
 RUN apk update && \
   apk add --no-cache gcc python3-dev krb5-dev openssl-dev
