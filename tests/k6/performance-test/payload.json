@@ -1,0 +1,53 @@
+{
+    "request": "MIICgDCCAWgCAQAwFDESMBAGA1UEAwwJdGVzdC1wZXJmMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyBSkyKvLdzeHIMT2d7EbMf4uqlABr4pvL5GDXT0kMfU8BtipBfFVLTyU9btJkXG1NlXskAbS47gg704V5ASNTsTUrxqCw5j/B17Qpcz/Vrkfwcjzs0auOa8NrxgtWLgaNFbqG13kvhUVF+av+xSfqEvr58A1KZjOhhX9mNToksNsx/7uVAf3HAnt88mNXZYiVpFWmncC3N//MDob9JIUjUsKiDQCI3rnew1opbrmmE1++eQJ28mRhuzSG0CvyBo5tlj3QfbvXkTzFpN3Ftwok+lIVoDV3Xx4rOnE1ySPRh/WGDWOwH+DCdfELz67u0NZz3sUEa7QuLLR2xoQwp2qRwIDAQABoCcwJQYJKoZIhvcNAQkOMRgwFjAUBgNVHREEDTALggl0ZXN0LXBlcmYwDQYJKoZIhvcNAQELBQADggEBAIGo77rC95MtzKuN2pPP5wx3PfC5wHzh0+pmH0lUP52aLOb3tbAUDHUvGB7DG7KI/P9Nspl+WJW6Z/xHl/rV5o6qZlbVUWy8Ao4V4YrA9V0NtkgZ8XTbO7e5Yq3fHxTO8Go02xRH/4bqPfX5DkXmAbCd/xEuTa7pjlLlU0O6oUmJYLtHjF2oxDodpOuqBd+0rHXKDtWMndHvWqsLVB68OeJdqW2JW2gmLgyjmmfS1b8je5m7Exq38JB2B5TmCvoqMJwt1DHNzLNbHqpS9sLOBED12jwdlh+23JMpU03jFMDVBsziAyYyXeLmvJRzIPYwcTcT9DsRhsppiAncr7EKC4g=",
+    "format": "pkcs10",
+    "attributes": [],
+    "raProfileAttributes": [
+        {
+            "name": "raprofile_select_ca_method",
+            "content": [
+                {
+                    "data": "configstring"
+                }
+            ]
+        },
+        {
+            "name": "raprofile_config_string",
+            "content": [
+                {
+                    "data": "vmi307469.3key.local\\Demo MS Sub CA"
+                }
+            ]
+        },
+        {
+            "name": "ra_profile_ca_name",
+            "content": [
+                {
+                    "data": {
+                        "name": "Demo MS Sub CA",
+                        "display_name": "Demo MS Sub CA",
+                        "computer_name": "vmi307469.3key.local",
+                        "config_string": "vmi307469.3key.local\\Demo MS Sub CA",
+                        "ca_type": "Enterprise Subordinate CA",
+                        "is_enterprise": true,
+                        "is_root": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "raprofile_template_name",
+            "content": [
+                {
+                    "data": {
+                        "name": "WebServer",
+                        "display_name": "Web Server",
+                        "schema_version": "1",
+                        "version": "4.1",
+                        "oid": "1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.204.1.16"
+                    }
+                }
+            ]
+        }
+    ]
+}
