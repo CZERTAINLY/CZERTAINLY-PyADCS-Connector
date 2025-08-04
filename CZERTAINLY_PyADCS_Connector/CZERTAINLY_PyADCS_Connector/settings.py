@@ -147,9 +147,10 @@ LOGGING = {
             "style": "{",
         },
         "console_formatter": {
+            "()": "PyADCSConnector.utils.logging.MillisecondFormatter",
             "format": "{asctime} {levelname} {module} {processName:s}-{process:d} {threadName:s}-{thread:d} "
                       "{funcName:s} : {message}",
-            "datefmt": "%Y-%m-%dT%H:%M:%S%z",
+            "datefmt": "%Y-%m-%dT%H:%M:%S.%f%z",
             "style": "{",
         },
     },
