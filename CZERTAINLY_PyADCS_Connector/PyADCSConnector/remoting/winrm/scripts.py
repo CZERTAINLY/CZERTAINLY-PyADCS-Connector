@@ -237,12 +237,28 @@ def dump_certificates_script(ca: AuthorityData, template: TemplateData or None, 
 def submit_certificate_request_script(request, ca: AuthorityData, template: TemplateData):
     return '\n'.join([
         IMPORT_MODULE,
-        f"$req = \"{request}\"",
-        "$CertRequest = New-Object -ComObject CertificateAuthority.Request",
-        f"$Status = $CertRequest.Submit(0xff, $req, \"CertificateTemplate:{template.name}\", \"{ca.config_string}\")",
-        f"$cert = Get-CertificationAuthority -Name \"{ca.name}\" | Get-IssuedRequest -RequestID "
-        f"$CertRequest.GetRequestId() -Property \"RawCertificate\"",
-        "$cert.RawCertificate"
+        "try {",
+        f"    $req = \"{request}\"",
+        "    $CertRequest = New-Object -ComObject CertificateAuthority.Request",
+        f"    $Status = $CertRequest.Submit(0xff, $req, \"CertificateTemplate:{template.name}\", \"{ca.config_string}\")",
+        "    $RequestId = $CertRequest.GetRequestId()",
+        "",
+        "    # Use certutil to get the issued certificate by RequestId",
+        f"    $ViewOutput = & certutil -config \"{ca.config_string}\" -view -restrict \"RequestId=$RequestId,Disposition>=12,Disposition<=21\" -out \"RawCertificate\" csv 2>&1",
+        "    if ($LASTEXITCODE -eq 0) {",
+        "        $Lines = $ViewOutput -split \"`n\"",
+        "        foreach ($line in $Lines) {",
+        "            $line = $line.Trim()",
+        "            if ($line -and $line -notmatch '^Row \\d+:' -and $line -notmatch '^Column' -and $line -notmatch '^Maximum' -and $line -ne 'CertUtil: -view command completed successfully.') {",
+        "                Write-Output $line",
+        "            }",
+        "        }",
+        "    } else {",
+        "        Write-Error \"Failed to retrieve certificate: $ViewOutput\"",
+        "    }",
+        "} catch {",
+        "    Write-Error \"Failed to submit certificate request: $_\"",
+        "}"
     ])
 
 
