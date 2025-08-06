@@ -47,39 +47,30 @@ def get_cas_script():
     script = f"""{IMPORT_MODULE}
 $TemplateList = @()
 try {{
-    # Use certutil to enumerate CAs
-    $CertUtilOutput = & certutil -config - 2>&1
-    if ($LASTEXITCODE -eq 0) {{
-        $Lines = $CertUtilOutput -split "`n"
-        for ($i = 0; $i -lt $Lines.Length; $i++) {{
-            $line = $Lines[$i].Trim()
-            if ($line -match '^\\d+') {{
-                $parts = $line -split ' ', 2
-                if ($parts.Length -ge 2) {{
-                    $configString = $parts[1].Trim('"')
-                    if ($configString -match '^(.+)\\\\(.+)$') {{
-                        $computerName = $Matches[1]
-                        $caName = $Matches[2]
-                        $OutputObject = "" | Select Name, DisplayName, ComputerName, ConfigString, Type, IsEnterprise, IsRoot, IsAccessible, ServiceStatus
-                        $OutputObject.Name = $caName
-                        $OutputObject.DisplayName = $caName
-                        $OutputObject.ComputerName = $computerName
-                        $OutputObject.ConfigString = $configString
-                        $OutputObject.Type = "Enterprise CA"
-                        $OutputObject.IsEnterprise = $true
-                        $OutputObject.IsRoot = $false
-                        $OutputObject.IsAccessible = $true
-                        $OutputObject.ServiceStatus = "Running"
-                        $TemplateList += $OutputObject
-                    }}
-                }}
-            }}
-        }}
-    }} else {{
-        # Fallback: try to get local CA info using COM
-        $CAConfig = New-Object -ComObject CertificateAuthority.Config
-        $CAName = $CAConfig.GetConfig(2)
-        $ComputerName = $env:COMPUTERNAME
+    # Use COM objects to enumerate CAs
+    $CAConfig = New-Object -ComObject CertificateAuthority.Config
+    $CAName = $CAConfig.GetConfig(2)
+    $ComputerName = $env:COMPUTERNAME
+    
+    # Try to get available CAs using COM
+    try {{
+        $ConfigString = "$ComputerName\\$CAName"
+        $CertAdmin = New-Object -ComObject CertificateAuthority.Admin
+        $CAProperty = $CertAdmin.GetCAProperty($ConfigString, 0x00000000, 0, 0x00000004)
+        
+        $OutputObject = "" | Select Name, DisplayName, ComputerName, ConfigString, Type, IsEnterprise, IsRoot, IsAccessible, ServiceStatus
+        $OutputObject.Name = $CAName
+        $OutputObject.DisplayName = $CAName
+        $OutputObject.ComputerName = $ComputerName
+        $OutputObject.ConfigString = $ConfigString
+        $OutputObject.Type = "Enterprise CA"
+        $OutputObject.IsEnterprise = $true
+        $OutputObject.IsRoot = $false
+        $OutputObject.IsAccessible = $true
+        $OutputObject.ServiceStatus = "Running"
+        $TemplateList += $OutputObject
+    }} catch {{
+        # If COM fails, fallback to basic local CA info
         $OutputObject = "" | Select Name, DisplayName, ComputerName, ConfigString, Type, IsEnterprise, IsRoot, IsAccessible, ServiceStatus
         $OutputObject.Name = $CAName
         $OutputObject.DisplayName = $CAName
@@ -104,58 +95,31 @@ def get_templates_script():
     script = f"""{IMPORT_MODULE}
 $TemplateList = @()
 try {{
-    # Use certutil to get certificate templates
-    $CertUtilOutput = & certutil -CATemplates 2>&1
-    if ($LASTEXITCODE -eq 0) {{
-        $Lines = $CertUtilOutput -split "`n"
-        $currentTemplate = $null
-        foreach ($line in $Lines) {{
-            $line = $line.Trim()
-            if ($line -match '^Template\\[\\d+\\]:') {{
-                if ($currentTemplate) {{
-                    $TemplateList += $currentTemplate
-                }}
-                $currentTemplate = "" | Select Name, DisplayName, SchemaVersion, Version, OID
-            }} elseif ($currentTemplate -and $line -match '^TemplatePropCommonName = (.+)') {{
-                $currentTemplate.Name = $Matches[1].Trim('"')
-                $currentTemplate.DisplayName = $Matches[1].Trim('"')
-            }} elseif ($currentTemplate -and $line -match '^TemplatePropOID = (.+)') {{
-                $currentTemplate.OID = $Matches[1]
-            }} elseif ($currentTemplate -and $line -match '^TemplatePropSchemaVersion = (.+)') {{
-                $currentTemplate.SchemaVersion = $Matches[1]
-            }} elseif ($currentTemplate -and $line -match '^TemplatePropMinorRevision = (.+)') {{
-                $currentTemplate.Version = $Matches[1]
-            }}
+    # Use LDAP directly to get certificate templates from Active Directory
+    try {{
+        $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+        $domainDN = $domain.Name -split '\\.' | ForEach-Object {{ "DC=$_" }} -join ','
+        $configDN = "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,$domainDN"
+        $searcher = New-Object System.DirectoryServices.DirectorySearcher
+        $searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$configDN")
+        $searcher.Filter = "(objectClass=pKICertificateTemplate)"
+        $searcher.PropertiesToLoad.Add("cn") | Out-Null
+        $searcher.PropertiesToLoad.Add("displayName") | Out-Null
+        $searcher.PropertiesToLoad.Add("msPKI-Cert-Template-OID") | Out-Null
+        $searcher.PropertiesToLoad.Add("revision") | Out-Null
+        $searcher.PropertiesToLoad.Add("msPKI-Schema-Version") | Out-Null
+        $results = $searcher.FindAll()
+        foreach ($result in $results) {{
+            $template = "" | Select Name, DisplayName, SchemaVersion, Version, OID
+            $template.Name = $result.Properties["cn"][0]
+            $template.DisplayName = if ($result.Properties["displayName"].Count -gt 0) {{ $result.Properties["displayName"][0] }} else {{ $result.Properties["cn"][0] }}
+            $template.OID = if ($result.Properties["msPKI-Cert-Template-OID"].Count -gt 0) {{ $result.Properties["msPKI-Cert-Template-OID"][0] }} else {{ "" }}
+            $template.SchemaVersion = if ($result.Properties["msPKI-Schema-Version"].Count -gt 0) {{ $result.Properties["msPKI-Schema-Version"][0] }} else {{ "1" }}
+            $template.Version = if ($result.Properties["revision"].Count -gt 0) {{ $result.Properties["revision"][0] }} else {{ "1" }}
+            $TemplateList += $template
         }}
-        if ($currentTemplate) {{
-            $TemplateList += $currentTemplate
-        }}
-    }} else {{
-        # Fallback: Try to get the default domain DN from registry or environment
-        try {{
-            $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
-            $domainDN = $domain.Name -split '\\.' | ForEach-Object {{ "DC=$_" }} -join ','
-            $configDN = "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,$domainDN"
-            $searcher = New-Object System.DirectoryServices.DirectorySearcher
-            $searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$configDN")
-            $searcher.Filter = "(objectClass=pKICertificateTemplate)"
-            $searcher.PropertiesToLoad.Add("cn") | Out-Null
-            $searcher.PropertiesToLoad.Add("displayName") | Out-Null
-            $searcher.PropertiesToLoad.Add("msPKI-Cert-Template-OID") | Out-Null
-            $searcher.PropertiesToLoad.Add("revision") | Out-Null
-            $results = $searcher.FindAll()
-            foreach ($result in $results) {{
-                $template = "" | Select Name, DisplayName, SchemaVersion, Version, OID
-                $template.Name = $result.Properties["cn"][0]
-                $template.DisplayName = if ($result.Properties["displayName"].Count -gt 0) {{ $result.Properties["displayName"][0] }} else {{ $result.Properties["cn"][0] }}
-                $template.OID = if ($result.Properties["msPKI-Cert-Template-OID"].Count -gt 0) {{ $result.Properties["msPKI-Cert-Template-OID"][0] }} else {{ "" }}
-                $template.SchemaVersion = "2"
-                $template.Version = if ($result.Properties["revision"].Count -gt 0) {{ $result.Properties["revision"][0] }} else {{ "1" }}
-                $TemplateList += $template
-            }}
-        }} catch {{
-            Write-Warning "Could not access Active Directory for templates: $_"
-        }}
+    }} catch {{
+        Write-Error "Could not access Active Directory for templates: $_"
     }}
 }} catch {{
     Write-Error "Failed to get certificate templates: $_"
@@ -237,28 +201,36 @@ try {{
 
 def submit_certificate_request_script(request, ca: AuthorityData, template: TemplateData):
     script = f"""{IMPORT_MODULE}
-try {{
-    $req = "{request}"
-    $CertRequest = New-Object -ComObject CertificateAuthority.Request
-    $Status = $CertRequest.Submit(0xff, $req, "CertificateTemplate:{template.name}", "{ca.config_string}")
-    $RequestId = $CertRequest.GetRequestId()
+$config = "{ca.config_string}"
+$template = "CertificateTemplate:{template.name}"
+$encoding = 0x1
+$pollMilliseconds = 100
+$timeout = 1000
 
-    # Use certutil to get the issued certificate by RequestId
-    $ViewOutput = & certutil -config "{ca.config_string}" -view -restrict "RequestId=$RequestId,Disposition>=12,Disposition<=21" -out "RawCertificate" csv 2>&1
-    if ($LASTEXITCODE -eq 0) {{
-        $Lines = $ViewOutput -split "`n"
-        foreach ($line in $Lines) {{
-            $line = $line.Trim()
-            if ($line -and $line -notmatch '^Row \\d+:' -and $line -notmatch '^Column' -and $line -notmatch '^Maximum' -and $line -ne 'CertUtil: -view command completed successfully.') {{
-                Write-Output $line
-            }}
-        }}
+$csr = "{request}"
+
+$req = New-Object -ComObject CertificateAuthority.Request
+
+$disposition = $req.Submit(0xff, $csr, $template, $config)
+$requestId   = $req.GetRequestId()
+
+if ($disposition -eq 0 -or $disposition -eq 3) {{
+    $certB64 = $req.GetCertificate($encoding)
+}} else {{
+    do {{
+        Start-Sleep -Milliseconds $pollMilliseconds
+        $elapsed += $pollMilliseconds
+        $disposition = $req.RetrievePending($requestId, $config)
+    }} until ($disposition -eq 3 -or $elapsed -ge $timeout)   # 3 = issued
+
+    if ($disposition -eq 3) {{
+        $certB64 = $req.GetCertificate($encoding)
     }} else {{
-        Write-Error "Failed to retrieve certificate: $ViewOutput"
+        throw "Timeout waiting for certificate (request $requestId)."
     }}
-}} catch {{
-    Write-Error "Failed to submit certificate request: $_"
 }}
+
+$certB64
 """
     return script
 
@@ -266,40 +238,21 @@ try {{
 def get_template_oid_script(template):
     script = f"""{IMPORT_MODULE}
 try {{
-    # Try certutil first
-    $CertUtilOutput = & certutil -CATemplates 2>&1
-    if ($LASTEXITCODE -eq 0) {{
-        $Lines = $CertUtilOutput -split "`n"
-        $inTemplate = $false
-        foreach ($line in $Lines) {{
-            $line = $line.Trim()
-            if ($line -match '^Template\\[\\d+\\]:') {{
-                $inTemplate = $false
-            }}
-            if ($line -match '^TemplatePropCommonName = "{template}"' -or $line -match '^TemplatePropCommonName = {template}') {{
-                $inTemplate = $true
-            }} elseif ($inTemplate -and $line -match '^TemplatePropOID = (.+)') {{
-                Write-Output $Matches[1]
-                break
-            }}
+    # Use LDAP query directly to get template OID
+    try {{
+        $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+        $domainDN = $domain.Name -split '\\.' | ForEach-Object {{ "DC=$_" }} -join ','
+        $configDN = "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,$domainDN"
+        $searcher = New-Object System.DirectoryServices.DirectorySearcher
+        $searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$configDN")
+        $searcher.Filter = "(&(objectClass=pKICertificateTemplate)(cn={template}))"
+        $searcher.PropertiesToLoad.Add("msPKI-Cert-Template-OID") | Out-Null
+        $result = $searcher.FindOne()
+        if ($result -and $result.Properties["msPKI-Cert-Template-OID"].Count -gt 0) {{
+            Write-Output $result.Properties["msPKI-Cert-Template-OID"][0]
         }}
-    }} else {{
-        # Fallback: Use LDAP query
-        try {{
-            $domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
-            $domainDN = $domain.Name -split '\\.' | ForEach-Object {{ "DC=$_" }} -join ','
-            $configDN = "CN=Certificate Templates,CN=Public Key Services,CN=Services,CN=Configuration,$domainDN"
-            $searcher = New-Object System.DirectoryServices.DirectorySearcher
-            $searcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$configDN")
-            $searcher.Filter = "(&(objectClass=pKICertificateTemplate)(cn={template}))"
-            $searcher.PropertiesToLoad.Add("msPKI-Cert-Template-OID") | Out-Null
-            $result = $searcher.FindOne()
-            if ($result -and $result.Properties["msPKI-Cert-Template-OID"].Count -gt 0) {{
-                Write-Output $result.Properties["msPKI-Cert-Template-OID"][0]
-            }}
-        }} catch {{
-            Write-Warning "Could not access Active Directory for template OID: $_"
-        }}
+    }} catch {{
+        Write-Error "Could not access Active Directory for template OID: $_"
     }}
 }} catch {{
     Write-Error "Failed to get template OID: $_"
