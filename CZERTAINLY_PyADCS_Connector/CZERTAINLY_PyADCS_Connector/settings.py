@@ -20,6 +20,8 @@ environ.Env.read_env()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 ADCS_SEARCH_PAGE_SIZE = env("ADCS_SEARCH_PAGE_SIZE", default=1000)
+ADCS_ISSUE_POLLING_INTERVAL = env("ADCS_ISSUE_POLLING_INTERVAL", default=100)
+ADCS_ISSUE_POLLING_TIMEOUT = env("ADCS_ISSUE_POLLING_TIMEOUT", default=3000)
 
 # Prefix used for all database tables
 DATABASE_SCHEMA = env("DATABASE_SCHEMA", default="pyadcs")

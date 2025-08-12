@@ -5,6 +5,9 @@ IMPORT_MODULE = """Import-Module PSPKI
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 $Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)"""
 
+IMPORTS = """$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)"""
+
 
 def verify_connection_script():
     """
@@ -93,16 +96,41 @@ def dump_certificates_script(ca: AuthorityData, template: TemplateData or None, 
     return '\n'.join(commands)
 
 
-def submit_certificate_request_script(request, ca: AuthorityData, template: TemplateData):
-    return '\n'.join([
-        IMPORT_MODULE,
-        f"$req = \"{request}\"",
-        "$CertRequest = New-Object -ComObject CertificateAuthority.Request",
-        f"$Status = $CertRequest.Submit(0xff, $req, \"CertificateTemplate:{template.name}\", \"{ca.config_string}\")",
-        f"$cert = Get-CertificationAuthority -Name \"{ca.name}\" | Get-IssuedRequest -RequestID "
-        f"$CertRequest.GetRequestId() -Property \"RawCertificate\"",
-        "$cert.RawCertificate"
-    ])
+def submit_certificate_request_script(request, ca: AuthorityData, template: TemplateData,
+                                      polling_interval=100, timeout=3000):
+    script = f"""{IMPORTS}
+$config = "{ca.config_string}"
+$template = "CertificateTemplate:{template.name}"
+$encoding = 0x1
+$pollMilliseconds = {polling_interval}
+$timeoutMilliseconds = {timeout}
+
+$csr = "{request}"
+
+$req = New-Object -ComObject CertificateAuthority.Request
+
+$disposition = $req.Submit(0xff, $csr, $template, $config)
+$requestId   = $req.GetRequestId()
+
+if ($disposition -eq 0 -or $disposition -eq 3) {{
+    $certB64 = $req.GetCertificate($encoding)
+}} else {{
+    do {{
+        Start-Sleep -Milliseconds $pollMilliseconds
+        $elapsed += $pollMilliseconds
+        $disposition = $req.RetrievePending($requestId, $config)
+    }} until ($disposition -eq 3 -or $elapsed -ge $timeout)   # 3 = issued
+
+    if ($disposition -eq 3) {{
+        $certB64 = $req.GetCertificate($encoding)
+    }} else {{
+        throw "Timeout waiting for certificate (request $requestId)."
+    }}
+}}
+
+$certB64
+"""
+    return script
 
 
 def get_template_oid_script(template):
