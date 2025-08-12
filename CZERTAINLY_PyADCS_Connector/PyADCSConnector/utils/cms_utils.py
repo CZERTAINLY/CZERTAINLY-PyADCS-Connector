@@ -60,6 +60,24 @@ def convert_crmf_to_null_signed_pkcs10(encoded, template: TemplateData):
     extensions = Extensions()
     extensions.append(extension)
 
+    # Copy SAN (2.5.29.17) from CRMF CertTemplate.extensions if present
+    # We preserve the extn_id, critical flag, and extn_value as-is.
+    crmf_exts = cert_req_msq['certReq']['certTemplate']['extensions'] if 'extensions' in cert_req_msq['certReq']['certTemplate'] else None
+
+    # copy SAN; only set 'critical' if present (default is FALSE when omitted)
+    if crmf_exts is not None:
+        for ext in crmf_exts:
+            ext_id = str(ext['extn_id'])
+            if ext_id in ('2.5.29.17', 'subject_alt_name'):
+                san_ext = Extension()
+                san_ext['extn_id'] = ext['extn_id']
+                if 'critical' in ext:  # omit means FALSE
+                    san_ext['critical'] = ext['critical']
+                san_ext['extn_value'] = ext['extn_value']
+                extensions.append(san_ext)
+                break
+
+    # Wrap extensions into the PKCS#10 extensionRequest attribute ---
     extensions_set = SetOfExtensions()
     extensions_set.append(extensions)
 
