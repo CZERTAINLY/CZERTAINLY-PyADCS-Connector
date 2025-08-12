@@ -1,104 +1,334 @@
 from PyADCSConnector.utils.dump_parser import AuthorityData, TemplateData
 from PyADCSConnector.utils.revocation_reason import CertificateRevocationReason
 
-IMPORT_MODULE = """Import-Module PSPKI
+IMPORTS = """
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
-$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)"""
+$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)
+"""
 
-IMPORTS = """$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
-$Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)"""
+IMPORT_FUNCTION_ADD_RESTRICTION = """
+function Add-Restriction {{
+  param(
+    [__ComObject]$View, [int]$Col, [string]$Op, $Value,
+    [int]$CVR_SEEK_EQ = 0x1, [int]$CVR_SEEK_LT = 0x2, [int]$CVR_SEEK_LE = 0x4,
+    [int]$CVR_SEEK_GE = 0x8, [int]$CVR_SEEK_GT = 0x10
+  )
+  $seek = switch ($Op) {{
+    'eq' {{ $CVR_SEEK_EQ }}
+    'lt' {{ $CVR_SEEK_LT }}
+    'le' {{ $CVR_SEEK_LE }}
+    'ge' {{ $CVR_SEEK_GE }}
+    'gt' {{ $CVR_SEEK_GT }}
+    default {{ throw "Unsupported operator '$Op'." }}
+  }}
+  $CVR_SORT_NONE = 0
+  $View.SetRestriction($Col, $seek, $CVR_SORT_NONE, $Value) | Out-Null
+}}
+"""
 
+IMPORT_FUNCTION_APPLY_FILTERS = """
+# Accepts simple filters like: "Request.Disposition ge 12", "CertificateTemplate eq WebServer"
+function Apply-Filters {{
+  param([__ComObject]$View, [hashtable]$ColIndex, [string[]]$Filters)
+  foreach ($f in $Filters) {{
+    if (-not $f) {{ continue }}
+    if ($f -notmatch '^\\s*(?<col>[^ ]+)\\s+(?<op>eq|lt|le|ge|gt)\\s+(?<val>.+?)\\s*$') {{
+      throw "Bad filter syntax: '$f'"
+    }}
+    $colName = $matches.col
+    $op      = $matches.op
+    $valRaw  = $matches.val.Trim()
+
+    if (-not $ColIndex.ContainsKey($colName)) {{ throw "Unknown column '$colName'." }}
+
+    # try to coerce types: int, datetime, else string
+    $val = if ($valRaw -match '^\\d+$') {{
+      [int]$valRaw
+    }} elseif ($valRaw -match '^\\d{{4}}-\\d{{2}}-\\d{{2}}') {{
+      [datetime]::Parse($valRaw)
+    }} else {{
+      # strip quotes if present
+      $valRaw.Trim("'`"")
+    }}
+    Add-Restriction -View $View -Col $ColIndex[$colName] -Op $op -Value $val
+  }}
+}}
+"""
+
+IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES = """
+function Convert-RawCertToBytes {{
+  param([Parameter(Mandatory)]$Val)
+  if ($Val -is [byte[]]) {{ return $Val }}
+  $s = [string]$Val
+  if ([string]::IsNullOrWhiteSpace($s)) {{ return $null }}
+  if ($s -match '-----BEGIN [^-]+-----') {{
+    $s = $s -replace '-----BEGIN [^-]+-----',''
+    $s = $s -replace '-----END [^-]+-----',''
+  }}
+  $s = $s -replace '\\s',''
+  [Convert]::FromBase64String($s)
+}}
+"""
 
 def verify_connection_script():
     """
     Returns a script that verifies the connection to the remote server.
     """
-    return '\n'.join([
-        IMPORT_MODULE,
-        # "Get-CertificationAuthority | Ping-ICertInterface"
-    ])
-
-
-def get_ca_script(computer_name: str):
-    return '\n'.join([
-        IMPORT_MODULE,
-        "Get-CertificationAuthority -ComputerName " + computer_name + " | Format-List *",
-    ])
+    script = f"""{IMPORTS}"""
+    return script
 
 
 def get_cas_script():
-    return '\n'.join([
-        IMPORT_MODULE,
-        "$TemplateList = @()",
-        "(Get-CertificationAuthority) | Foreach-Object {",
-        "$template = $_",
-        "$OutputObject = \"\" | Select Name, DisplayName, ComputerName, ConfigString, Type, IsEnterprise, IsRoot, "
-        "IsAccessible, ServiceStatus",
-        "$outputObject.Name = $template.Name",
-        "$OutputObject.DisplayName = $template.DisplayName",
-        "$OutputObject.ComputerName = $template.ComputerName",
-        "$OutputObject.ConfigString = $template.ConfigString",
-        "$OutputObject.Type = $template.Type",
-        "$OutputObject.IsEnterprise = $template.IsEnterprise",
-        "$OutputObject.IsRoot = $template.IsRoot",
-        "$OutputObject.IsAccessible = $template.IsAccessible",
-        "$OutputObject.ServiceStatus = $template.ServiceStatus",
-        "$TemplateList += $OutputObject",
-        "}",
-        "$TemplateList | Format-List"
-    ])
+    script = f"""
+{IMPORTS}
+$cas = @()
+
+# ICertConfig to enumerate CAs visible to the client
+$cfg = New-Object -ComObject CertificateAuthority.Config
+[void]$cfg.Reset(0)
+
+# Constants for ICertAdmin::GetCAProperty
+$PROPTYPE_LONG  = 1
+$CR_PROP_CATYPE = 0x0000000A
+
+function Map-CaTypeText($n) {{
+    switch ($n) {{
+        0 {{ "Enterprise Root CA" }}
+        1 {{ "Enterprise Subordinate CA" }}
+        3 {{ "Standalone Root CA" }}
+        4 {{ "Standalone Subordinate CA" }}
+        default {{ "" }}
+    }}
+}}
+
+do {{
+    $obj = [pscustomobject]@{{
+        Name         = $cfg.GetField("CommonName")
+        DisplayName  = $cfg.GetField("CommonName")
+        ComputerName = $cfg.GetField("Server")
+        ConfigString = $cfg.GetField("Config")
+        Type         = ""       # blank unless reachable
+        IsEnterprise = $false   # default False unless we confirm
+        IsRoot       = $false
+        IsAccessible = $false
+        ServiceStatus= ""       # blank unless reachable
+    }}
+
+    try {{
+        $adm = New-Object -ComObject CertificateAuthority.Admin
+        $catype = $adm.GetCAProperty($obj.ConfigString, $CR_PROP_CATYPE, 0, $PROPTYPE_LONG, 0)
+
+        # If we got here, the CA responded
+        $obj.Type         = Map-CaTypeText $catype
+        switch ($catype) {{
+            0 {{ $obj.IsEnterprise = $true; $obj.IsRoot = $true  }}
+            1 {{ $obj.IsEnterprise = $true; $obj.IsRoot = $false }}
+            3 {{ $obj.IsEnterprise = $false; $obj.IsRoot = $true }}
+            4 {{ $obj.IsEnterprise = $false; $obj.IsRoot = $false}}
+            default {{ }}
+        }}
+        $obj.IsAccessible = $true
+        $obj.ServiceStatus = "Running"
+    }} catch {{
+        # Leave defaults: blank Type/ServiceStatus, booleans False, IsAccessible False
+    }} finally {{
+        if ($adm) {{ [void][Runtime.InteropServices.Marshal]::ReleaseComObject($adm) }}
+    }}
+
+    $cas += $obj
+}} while ($cfg.Next() -ne -1)
+
+$cas | Select Name,DisplayName,ComputerName,ConfigString,Type,IsEnterprise,IsRoot,IsAccessible,ServiceStatus | Format-List
+"""
+    return script
 
 
 def get_templates_script():
-    return '\n'.join([
-        IMPORT_MODULE,
-        "$TemplateList = @()",
-        "(Get-CertificateTemplate) | Foreach-Object {",
-        "$template = $_",
-        "$OutputObject = \"\" | Select Name, DisplayName, SchemaVersion, Version, OID",
-        "$outputObject.Name = $template.Name",
-        "$OutputObject.DisplayName = $template.DisplayName",
-        "$OutputObject.SchemaVersion = $template.SchemaVersion",
-        "$OutputObject.Version = $template.Version",
-        "$OutputObject.OID = $template.Oid.Value",
-        "$TemplateList += $OutputObject",
-        "}",
-        "$TemplateList | Format-List"
-    ])
+    script = f"""
+{IMPORTS}
+$root = [ADSI]"LDAP://RootDSE"
+$base = "LDAP://$($root.configurationNamingContext)"
+
+$ds = New-Object System.DirectoryServices.DirectorySearcher (
+    (New-Object System.DirectoryServices.DirectoryEntry $base),
+    "(objectClass=pKICertificateTemplate)"
+)
+$ds.PageSize    = 1000
+$ds.SearchScope = "Subtree"
+
+# Only what we need
+@(
+  "cn",
+  "displayName",
+  "msPKI-Template-Schema-Version",
+  "revision",                              # major (preferred)
+  "msPKI-Template-Major-Revision",         # major (fallback, some forests)
+  "msPKI-Template-Minor-Revision",         # minor
+  "msPKI-Cert-Template-OID"
+) | ForEach-Object {{ [void]$ds.PropertiesToLoad.Add($_) }}
+
+$results = $ds.FindAll()
+
+$TemplateList = foreach ($r in $results) {{
+    $p = $r.Properties
+
+    $cn        = $p["cn"] | Select-Object -First 1
+    $disp      = $p["displayname"] | Select-Object -First 1
+    $schema    = $p["mspki-template-schema-version"] | Select-Object -First 1
+    $maj       = ($p["revision"] | Select-Object -First 1)
+    if ($null -eq $maj) {{ $maj = $p["mspki-template-major-revision"] | Select-Object -First 1 }}
+    $min       = $p["mspki-template-minor-revision"] | Select-Object -First 1
+    $oid       = $p["mspki-cert-template-oid"] | Select-Object -First 1
+
+    # Fallback: if major/minor missing, rebind this object and read only those attrs
+    if ($maj -eq $null -or $min -eq $null) {{
+        try {{
+            $e = [ADSI]$r.Path
+            $e.RefreshCache(@("revision","msPKI-Template-Major-Revision","msPKI-Template-Minor-Revision"))
+            if ($maj -eq $null) {{ $maj = $e.Properties["revision"].Value
+                                  if ($maj -eq $null) {{ $maj = $e.Properties["msPKI-Template-Major-Revision"].Value }} }}
+            if ($min -eq $null) {{ $min = $e.Properties["msPKI-Template-Minor-Revision"].Value }}
+        }} catch {{}}
+    }}
+
+    # Always show major.minor; default minor to 0 when absent
+    $minorVal = if ($min -ne $null -and $min -ne "") {{ [int]$min }} else {{ 0 }}
+    $version  = if ($maj -ne $null -and $maj -ne "") {{ "{{0}}.{{1}}" -f ([int]$maj), $minorVal }} else {{ $null }}
+
+    [pscustomobject]@{{
+        Name          = $cn
+        DisplayName   = if ($disp) {{ $disp }} else {{ $cn }}
+        SchemaVersion = if ($schema -ne $null -and $schema -ne "") {{ [int]$schema }} else {{ $null }}
+        Version       = $version
+        OID           = $oid
+    }}
+}}
+
+$TemplateList | Sort-Object Name | Format-List
+"""
+    return script
 
 
-def select_objects(command, select_property):
-    if not select_property:
-        raise ValueError("Empty property is not a valid command.")
-
-    properties = ", ".join(select_property)
-    return f"{command} | Select-Object -Property {properties}"
-
-
-def dump_certificates_script(ca: AuthorityData, template: TemplateData or None, issued_after, page, page_size):
-    commands = [IMPORT_MODULE]
-    if issued_after:
-        commands.append(f'$issued_after = Get-Date -Date "{issued_after}"')
-    base_cmd = (f'Get-CertificationAuthority -Name "{ca.name}" | Get-AdcsDatabaseRow -Property "RawCertificate"'
-                f' -Page {page} -PageSize {page_size} -Filter "Request.Disposition -ge 12",'
-                f' "Request.Disposition -le 21"')
+def dump_certificates_script(ca, template, issued_after, page, page_size):
+    tmpl_name = ""
+    tmpl_oid = ""
     if template:
-        if template.schema_version == "1":
-            base_cmd = f'{base_cmd}, "CertificateTemplate -eq {template.name}"'
+        if str(template.schema_version) == "1":
+            tmpl_name = template.name or ""
         else:
-            base_cmd = f'{base_cmd}, "CertificateTemplate -eq {template.oid}"'
+            tmpl_oid = template.oid or ""
 
-    if issued_after:
-        commands.append(f'{base_cmd}, "NotBefore -ge $issued_after"')
-    else:
-        commands.append(base_cmd)
+    issued_after_str = issued_after or ""
 
-    return '\n'.join(commands)
+    script = f"""
+{IMPORTS}
+{IMPORT_FUNCTION_ADD_RESTRICTION}
+{IMPORT_FUNCTION_APPLY_FILTERS}
+{IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES}
+# --- params / inputs ---------------------------------------------------------
+$caName        = "{ca.config_string}"
+$Page          = {int(page)}
+$PageSize      = {int(page_size)}
+$TemplateName  = "{tmpl_name}"
+$TemplateOID   = "{tmpl_oid}"
+$IssuedAfter   = "{issued_after_str}"
+
+$skip = [Math]::Max(0, ($Page - 1) * $PageSize)
+$take = $PageSize
+
+# columns in the order we want them
+$colsWanted = @(
+  'RequestID',
+  'Request.StatusCode',
+  'Request.DispositionMessage',
+  'Request.RequesterName',
+  'Request.SubmittedWhen',
+  'Request.CommonName',
+  'CertificateTemplate',
+  'RawCertificate'
+)
+
+# --- connect/view ------------------------------------------------------------
+$view = New-Object -ComObject CertificateAuthority.View
+$view.OpenConnection($caName)
+
+# resolve column indexes once (table ordinal 0 = base)
+$colIndex = @{{}}
+foreach ($n in ($colsWanted + 'Request.Disposition')) {{
+  if (-not $colIndex.ContainsKey($n)) {{
+    $colIndex[$n] = $view.GetColumnIndex(0, $n)
+  }}
+}}
+
+# 'NotBefore' may not exist on some deployments — try and allow missing
+try {{ $colIndex['NotBefore'] = $view.GetColumnIndex(0, 'NotBefore') }} catch {{ $colIndex['NotBefore'] = $null }}
+
+# narrow by disposition range (issued-ish states)
+Add-Restriction -View $view -Col $colIndex['Request.Disposition'] -Op ge -Value 12
+Add-Restriction -View $view -Col $colIndex['Request.Disposition'] -Op le -Value 21
+
+if ($TemplateName) {{ Add-Restriction -View $view -Col $colIndex['CertificateTemplate'] -Op eq -Value $TemplateName }}
+if ($TemplateOID)  {{ Add-Restriction -View $view -Col $colIndex['CertificateTemplate'] -Op eq -Value $TemplateOID }}
+if ($IssuedAfter -and $colIndex['NotBefore']) {{ Add-Restriction -View $view -Col $colIndex['NotBefore'] -Op ge -Value ([datetime]::Parse($IssuedAfter)) }}
+
+$extra = @()
+Apply-Filters -View $view -ColIndex $colIndex -Filters $extra
+
+# --- projection --------------------------------------------------------------
+$view.SetResultColumnCount($colsWanted.Count) | Out-Null
+foreach ($n in $colsWanted) {{ $view.SetResultColumn($colIndex[$n]) | Out-Null }}
+
+# --- iterate & shape ---------------------------------------------------------
+$rows = $view.OpenView()
+$results = New-Object 'System.Collections.Generic.List[object]'
+$i = 0
+
+for ($row = $rows.Next(); $row -ne -1; $row = $rows.Next()) {{
+  if ($i -lt $skip) {{ $i++; continue }}
+  if ($results.Count -ge $take) {{ break }}
+
+  $cols = $rows.EnumCertViewColumn()
+  $vals = @{{}}
+  foreach ($name in $colsWanted) {{
+    [void]$cols.Next()
+    $vals[$name] = $cols.GetValue(0)     # 0 = flags
+  }}
+
+  $raw = $vals['RawCertificate']
+  $rawBytes = if ($null -ne $raw) {{ Convert-RawCertToBytes $raw }} else {{ $null }}
+  $b64 = if ($rawBytes) {{ [Convert]::ToBase64String($rawBytes) }} else {{ $null }}
+
+  $tmpl = [string]$vals['CertificateTemplate']
+  $tmplPretty = if ($tmpl -match '^\\d+(\\.\\d+)+$') {{ $tmpl }} else {{ $tmpl }}
+
+  $obj = [pscustomobject]@{{
+    RequestID                    = $vals['RequestID']
+    'Request.StatusCode'         = $vals['Request.StatusCode']
+    'Request.DispositionMessage' = $vals['Request.DispositionMessage']
+    'Request.RequesterName'      = $vals['Request.RequesterName']
+    'Request.SubmittedWhen'      = $vals['Request.SubmittedWhen']
+    'Request.CommonName'         = $vals['Request.CommonName']
+    CertificateTemplate          = $tmpl
+    RawCertificate               = $b64
+    CertificateTemplateOid       = $tmplPretty
+    RowId                        = $vals['RequestID']
+    ConfigString                 = $caName
+    Table                        = 'Request'
+  }}
+
+  $results.Add($obj) | Out-Null
+  $i++
+}}
+
+$results
+"""
+    return script
 
 
 def submit_certificate_request_script(request, ca: AuthorityData, template: TemplateData,
                                       polling_interval=100, timeout=3000):
-    script = f"""{IMPORTS}
+    script = f"""
+{IMPORTS}
 $config = "{ca.config_string}"
 $template = "CertificateTemplate:{template.name}"
 $encoding = 0x1
@@ -119,7 +349,7 @@ if ($disposition -eq 0 -or $disposition -eq 3) {{
         Start-Sleep -Milliseconds $pollMilliseconds
         $elapsed += $pollMilliseconds
         $disposition = $req.RetrievePending($requestId, $config)
-    }} until ($disposition -eq 3 -or $elapsed -ge $timeout)   # 3 = issued
+    }} until ($disposition -eq 3 -or $elapsed -ge $timeoutMilliseconds)   # 3 = issued
 
     if ($disposition -eq 3) {{
         $certB64 = $req.GetCertificate($encoding)
@@ -133,30 +363,101 @@ $certB64
     return script
 
 
-def get_template_oid_script(template):
-    return '\n'.join([
-        IMPORT_MODULE,
-        f"(Get-CertificateTemplate -Name \"{template}\").Oid.Value"
-    ])
-
-
 def identify_certificate_script(serial_number, ca: AuthorityData):
-    return '\n'.join([
-        IMPORT_MODULE,
-        f'Get-CertificationAuthority -Name "{ca.name}" | Get-AdcsDatabaseRow'
-        f' -Filter "SerialNumber -eq {serial_number}", "Request.Disposition -ge 12", "Request.Disposition -le 21"'
-        f' -Property "SerialNumber", "CertificateTemplate", "ConfigString"'
-        # getting only issued requests without revoked ones
-        # f'Get-CertificationAuthority -Name "{ca.name}" | Get-IssuedRequest'
-        # f' -Filter "SerialNumber -eq {serial_number}"'
-    ])
+    script = f"""
+{IMPORTS}
+{IMPORT_FUNCTION_ADD_RESTRICTION}
+{IMPORT_FUNCTION_APPLY_FILTERS}
+# --- params / inputs ---------------------------------------------------------
+$caName       = "{ca.config_string}"
+$serialNumber = "{serial_number}"
+
+# columns in the order we want them
+$colsWanted = @(
+  'SerialNumber',
+  'CertificateTemplate',
+  'Request.Disposition',
+  'RequestID'
+)
+
+# --- connect/view ------------------------------------------------------------
+$view = New-Object -ComObject CertificateAuthority.View
+$view.OpenConnection($caName)
+
+# resolve column indexes once (table ordinal 0 = base)
+$colIndex = @{{}}
+foreach ($n in ($colsWanted + 'Request.Disposition')) {{
+  if (-not $colIndex.ContainsKey($n)) {{
+    $colIndex[$n] = $view.GetColumnIndex(0, $n)
+  }}
+}}
+
+# Serial exact match
+Add-Restriction -View $view -Col $colIndex['SerialNumber'] -Op eq -Value $serialNumber
+# Limit to issued-ish states: 12..21
+Add-Restriction -View $view -Col $colIndex['Request.Disposition'] -Op ge -Value 12
+Add-Restriction -View $view -Col $colIndex['Request.Disposition'] -Op le -Value 21
+
+$extra = @()
+Apply-Filters -View $view -ColIndex $colIndex -Filters $extra
+
+# --- projection --------------------------------------------------------------
+$view.SetResultColumnCount($colsWanted.Count) | Out-Null
+foreach ($n in $colsWanted) {{ $view.SetResultColumn($colIndex[$n]) | Out-Null }}
+
+# --- iterate & shape ---------------------------------------------------------
+$rows = $view.OpenView()
+$results = New-Object 'System.Collections.Generic.List[object]'
+
+for ($row = $rows.Next(); $row -ne -1; $row = $rows.Next()) {{
+  $cols = $rows.EnumCertViewColumn()
+  $vals = @{{}}
+  foreach ($name in $colsWanted) {{
+    [void]$cols.Next()
+    $vals[$name] = $cols.GetValue(0)     # 0 = flags
+  }}
+
+  $tmpl = [string]$vals['CertificateTemplate']
+  $tmplPretty = if ($tmpl -match '^\d+(\.\d+)+$') {{ $tmpl }} else {{ $tmpl }}
+
+  $results.Add([pscustomobject]@{{
+    SerialNumber               = $vals['SerialNumber']
+    CertificateTemplate        = $tmpl
+    CertificateTemplateOid     = $tmplPretty
+    'Request.Disposition'      = $vals['Request.Disposition']
+    RequestID                  = $vals['RequestID']
+    ConfigString               = $caName
+    Table                      = 'Certificate'
+  }}) | Out-Null
+}}
+
+$results
+"""
+    return script
 
 
 def get_revoke_script(ca: AuthorityData, certificate_serial_number: str, reason: str) -> str:
-    adcs_reason = CertificateRevocationReason.from_string(reason).to_string_ps_value()
+    adcs_reason = CertificateRevocationReason.from_string(reason).to_code()
 
-    return '\n'.join([
-        IMPORT_MODULE,
-        f"Get-CertificationAuthority -Name \"{ca.name}\" | Get-IssuedRequest -Filter"
-        f" \"SerialNumber -eq {certificate_serial_number}\" | Revoke-Certificate -Reason \"{adcs_reason}\""
-    ])
+    script = f"""
+{IMPORTS}
+$caConfig = "{ca.config_string}"
+$serialIn = "{certificate_serial_number}"
+$reasonCode = {adcs_reason}
+
+# Use native COM API: ICertAdmin.RevokeCertificate
+$admin = New-Object -ComObject CertificateAuthority.Admin
+
+# For RemoveFromCRL (8) the date is ignored; otherwise pass current datetime
+$when = if ($reasonCode -eq 8) {{ 0 }} else {{ (Get-Date) }}
+
+try {{
+    $admin.RevokeCertificate($caConfig, $serialIn, $reasonCode, $when)
+    Write-Host "Revocation command sent successfully."
+}}
+catch {{
+    Write-Error "Revocation failed: $($_.Exception.Message)"
+    return
+}}
+"""
+    return script

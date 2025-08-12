@@ -1,6 +1,8 @@
 import winrm
 from django.test import TestCase
 
+from PyADCSConnector.remoting.winrm.scripts import IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES, IMPORT_FUNCTION_APPLY_FILTERS
+from PyADCSConnector.remoting.winrm_remoting import minify_ps
 from PyADCSConnector.utils.dump_parser import DumpParser
 
 
@@ -450,3 +452,7 @@ ServiceStatus :
         self.assertEqual(templates[0].is_root, False)
         self.assertEqual(templates[0].is_accessible, False)
         self.assertEqual(templates[0].service_status, "")
+
+    def test_script_minify(self):
+        result = minify_ps(IMPORT_FUNCTION_APPLY_FILTERS)
+        print(result)

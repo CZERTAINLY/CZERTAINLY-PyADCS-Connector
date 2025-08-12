@@ -106,26 +106,26 @@ def discover_certificates(request_dto, discovery_history):
     for ca in cas:
         if not templates:
             page = 1
-            result = session.run_ps(dump_certificates_script(
+            result = session.run_long_ps(dump_certificates_script(
                 ca, None, issued_after, 1, ADCS_SEARCH_PAGE_SIZE))
             certificates = DumpParser.parse_certificates(result)
             total_certificates.extend(certificates)
             while len(certificates) == ADCS_SEARCH_PAGE_SIZE:
                 page += 1
-                result = session.run_ps(dump_certificates_script(
+                result = session.run_long_ps(dump_certificates_script(
                     ca, None, issued_after, page, ADCS_SEARCH_PAGE_SIZE))
                 certificates = DumpParser.parse_certificates(result)
                 total_certificates.extend(certificates)
         else:
             for template in templates:
                 page = 1
-                result = session.run_ps(dump_certificates_script(
+                result = session.run_long_ps(dump_certificates_script(
                     ca, template, issued_after, page, ADCS_SEARCH_PAGE_SIZE))
                 certificates = DumpParser.parse_certificates(result)
                 total_certificates.extend(certificates)
                 while len(certificates) == ADCS_SEARCH_PAGE_SIZE:
                     page += 1
-                    result = session.run_ps(dump_certificates_script(
+                    result = session.run_long_ps(dump_certificates_script(
                         ca, template, issued_after, page, ADCS_SEARCH_PAGE_SIZE))
                     certificates = DumpParser.parse_certificates(result)
                     total_certificates.extend(certificates)

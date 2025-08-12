@@ -9,6 +9,7 @@ class CertificateRevocationReason(Enum):
     SUPERSEDED = "superseded"
     CESSATION_OF_OPERATION = "cessationOfOperation"
     CERTIFICATE_HOLD = "certificateHold"
+    REMOVE_FROM_CRL = "removeFromCRL"
     PRIVILEGES_WITHDRAWN = "privilegeWithdrawn"
     AA_COMPROMISE = "aACompromise"
 
@@ -22,6 +23,7 @@ class CertificateRevocationReason(Enum):
             "superseded": CertificateRevocationReason.SUPERSEDED,
             "cessationOfOperation": CertificateRevocationReason.CESSATION_OF_OPERATION,
             "certificateHold": CertificateRevocationReason.CERTIFICATE_HOLD,
+            "removeFromCRL": CertificateRevocationReason.REMOVE_FROM_CRL,
             "privilegeWithdrawn": CertificateRevocationReason.PRIVILEGES_WITHDRAWN,
             "aACompromise": CertificateRevocationReason.AA_COMPROMISE
         }.get(reason, CertificateRevocationReason.UNSPECIFIED)
@@ -35,6 +37,21 @@ class CertificateRevocationReason(Enum):
             CertificateRevocationReason.SUPERSEDED: "Superseded",
             CertificateRevocationReason.CESSATION_OF_OPERATION: "CeaseOfOperation",
             CertificateRevocationReason.CERTIFICATE_HOLD: "Hold",
+            CertificateRevocationReason.REMOVE_FROM_CRL: "RemoveFromCRL",
             CertificateRevocationReason.PRIVILEGES_WITHDRAWN: "Unspecified",
             CertificateRevocationReason.AA_COMPROMISE: "Unspecified"
         }.get(self, "Unspecified")
+
+    def to_code(self) -> int:
+        return {
+            CertificateRevocationReason.UNSPECIFIED: 0,
+            CertificateRevocationReason.KEY_COMPROMISE: 1,
+            CertificateRevocationReason.CA_COMPROMISE: 2,
+            CertificateRevocationReason.AFFILIATION_CHANGED: 3,
+            CertificateRevocationReason.SUPERSEDED: 4,
+            CertificateRevocationReason.CESSATION_OF_OPERATION: 5,
+            CertificateRevocationReason.CERTIFICATE_HOLD: 6,
+            CertificateRevocationReason.REMOVE_FROM_CRL: 8,
+            CertificateRevocationReason.PRIVILEGES_WITHDRAWN: 9,
+            CertificateRevocationReason.AA_COMPROMISE: 10
+        }.get(self, 0)
