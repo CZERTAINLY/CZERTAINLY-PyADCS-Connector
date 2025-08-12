@@ -4,6 +4,7 @@ import logging
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
+from CZERTAINLY_PyADCS_Connector.settings import ADCS_ISSUE_POLLING_INTERVAL, ADCS_ISSUE_POLLING_TIMEOUT
 from PyADCSConnector.exceptions.not_found_exception import NotFoundException
 from PyADCSConnector.exceptions.validation_exception import ValidationException
 from PyADCSConnector.objects.certificate_dto import CertificateDto
@@ -100,7 +101,11 @@ def issue_new_certificate(uuid, certificate_request, request_format: Certificate
         certificate_request = create_cms(certificate_request, ca.name, template).decode()
     session = create_session_from_authority_instance_uuid(uuid)
     session.connect()
-    result = session.run_ps(submit_certificate_request_script(certificate_request, ca, template))
+    result = session.run_ps(
+        submit_certificate_request_script(
+            certificate_request, ca, template, ADCS_ISSUE_POLLING_INTERVAL, ADCS_ISSUE_POLLING_TIMEOUT
+        )
+    )
     session.disconnect()
 
     # Remove new lines and empty lines to form one Base64 string
