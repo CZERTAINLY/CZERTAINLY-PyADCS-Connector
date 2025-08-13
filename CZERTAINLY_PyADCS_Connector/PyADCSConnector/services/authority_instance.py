@@ -2,8 +2,7 @@ from PyADCSConnector.exceptions.authority_exception import AuthorityException
 from PyADCSConnector.exceptions.remoting_exception import RemotingException
 from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.remoting.remoting import invoke_remote_script, invoke_remote_script_uuid
-from PyADCSConnector.remoting.winrm.scripts import get_cas_script, get_templates_script
-from PyADCSConnector.remoting.winrm.scripts_static import dump_certificates_script_static
+from PyADCSConnector.remoting.winrm.scripts import get_cas_script, get_templates_script, verify_connection_script
 from PyADCSConnector.services.attributes.authority_attributes import *
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.dump_parser import DumpParser
@@ -49,7 +48,7 @@ def update_authority_instance(request_dto, authority_instance):
 
 def verify_connection(authority_instance):
     if authority_instance.transport == "credssp":
-        invoke_remote_script(authority_instance, dump_certificates_script_static())
+        invoke_remote_script(authority_instance, verify_connection_script())
     else:
         raise RemotingException("Unsupported transport type: %s" % authority_instance.transport)
 
