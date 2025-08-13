@@ -2,40 +2,27 @@ import logging
 from base64 import b64encode
 
 from PyADCSConnector.models.authority_instance import AuthorityInstance
-from PyADCSConnector.remoting.psrp_remoting import create_psrp_session_from_authority_instance
+from PyADCSConnector.remoting.pool_manager import global_pool_manager
 from PyADCSConnector.remoting.remote_result import RemoteResult
 from PyADCSConnector.remoting.remoting_protocol import RemotingProtocol
-from PyADCSConnector.remoting.winrm_remoting import create_winrm_session_from_authority_instance
 
 logger = logging.getLogger(__name__)
 
-
 def winrm_limit_reached(script: str) -> bool:
-    """
-    Check if the script length exceeds the WinRM limit of 8192 characters.
-    """
     length = len(b64encode(script.encode('utf_16_le')))
     return length > 8192
-
 
 def invoke_remote_script_uuid(authority_instance_uuid: str, script: str) -> RemoteResult:
     authority_instance = AuthorityInstance.objects.get(uuid=authority_instance_uuid)
     return invoke_remote_script(authority_instance, script)
 
-
 def invoke_remote_script(authority_instance: AuthorityInstance, script: str) -> RemoteResult:
-    remoting_protocol = RemotingProtocol.WINRM
-    if winrm_limit_reached(script):
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Script length exceeds WinRM limit, switching to PSRP remoting.")
-        remoting_protocol = RemotingProtocol.PSRP
+    # decide protocol exactly as you already do
+    remoting_protocol = RemotingProtocol.PSRP if winrm_limit_reached(script) else RemotingProtocol.WINRM
 
-    if remoting_protocol == RemotingProtocol.WINRM:
-        session = create_winrm_session_from_authority_instance(authority_instance)
-    elif remoting_protocol == RemotingProtocol.PSRP:
-        session = create_psrp_session_from_authority_instance(authority_instance)
+    # borrow from the appropriate pool (created lazily on first access)
+    pool = global_pool_manager.get_pool(authority_instance, remoting_protocol)
 
-    session.connect()
-    result = session.run_ps(script)
-    session.disconnect()
-    return result
+    # borrow() blocks when the pool is at capacity and releases on context exit
+    with pool.borrow() as session:
+        return session.run_ps(script)
