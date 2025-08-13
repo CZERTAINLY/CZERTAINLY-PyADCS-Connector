@@ -1,4 +1,5 @@
 import logging
+from typing import Literal, Final, cast
 
 from psrp import WSManInfo, SyncRunspacePool, SyncPowerShell
 from psrpcore.types import RunspacePoolState
@@ -11,6 +12,9 @@ from PyADCSConnector.utils import attribute_definition_utils
 logger = logging.getLogger(__name__)
 
 
+Transport = Literal["basic", "certificate", "credssp", "kerberos", "negotiate", "ntlm"]
+_ALLOWED: Final[tuple[Transport, ...]] = ("basic", "certificate", "credssp", "kerberos", "negotiate", "ntlm")
+
 class PsrpRemoting(object):
     def __init__(self, username, password, hostname, use_https=False, port=5985, transport='credssp'):
         self.username = username
@@ -20,16 +24,21 @@ class PsrpRemoting(object):
         self.port = port
         self.transport = transport
         self.protocol = None
+        self.transport = transport
 
     def connect(self):
+        t = self.transport.lower()
+        if t not in _ALLOWED:
+            raise ValueError(f"Unsupported transport: {self.transport!r}. Allowed: {_ALLOWED}")
+        auth: Transport = cast(Transport, t)  # safe after the check
+
         wsman_info = WSManInfo(
             server=self.hostname,
             username=self.username,
             password=self.password,
             port=self.port,
             scheme="https" if self.use_https else "http",
-            # convert self.transport to Literal
-            auth=self.transport if self.transport in ["credssp", "kerberos", "basic", "negotiate"] else "credssp",
+            auth=auth,
         )
         self.protocol = SyncRunspacePool(wsman_info)
         self.protocol.open()
