@@ -8,68 +8,68 @@ $ProgressPreference='SilentlyContinue'
 $PSModuleAutoLoadingPreference='None'
 """
 
-IMPORT_FUNCTION_ADD_RESTRICTION = f"""
-function Add-Restriction {{
+IMPORT_FUNCTION_ADD_RESTRICTION = """
+function Add-Restriction {
   param(
     [__ComObject]$View, [int]$Col, [string]$Op, $Value,
     [int]$CVR_SEEK_EQ = 0x1, [int]$CVR_SEEK_LT = 0x2, [int]$CVR_SEEK_LE = 0x4,
     [int]$CVR_SEEK_GE = 0x8, [int]$CVR_SEEK_GT = 0x10
   )
-  $seek = switch ($Op) {{
-    'eq' {{ $CVR_SEEK_EQ }}
-    'lt' {{ $CVR_SEEK_LT }}
-    'le' {{ $CVR_SEEK_LE }}
-    'ge' {{ $CVR_SEEK_GE }}
-    'gt' {{ $CVR_SEEK_GT }}
-    default {{ throw "Unsupported operator '$Op'." }}
-  }}
+  $seek = switch ($Op) {
+    'eq' { $CVR_SEEK_EQ }
+    'lt' { $CVR_SEEK_LT }
+    'le' { $CVR_SEEK_LE }
+    'ge' { $CVR_SEEK_GE }
+    'gt' { $CVR_SEEK_GT }
+    default { throw "Unsupported operator '$Op'." }
+  }
   $CVR_SORT_NONE = 0
   $View.SetRestriction($Col, $seek, $CVR_SORT_NONE, $Value) | Out-Null
-}}
+}
 """
 
-IMPORT_FUNCTION_APPLY_FILTERS = f"""
+IMPORT_FUNCTION_APPLY_FILTERS = """
 # Accepts simple filters like: "Request.Disposition ge 12", "CertificateTemplate eq WebServer"
-function Apply-Filters {{
+function Apply-Filters {
   param([__ComObject]$View, [hashtable]$ColIndex, [string[]]$Filters)
-  foreach ($f in $Filters) {{
-    if (-not $f) {{ continue }}
-    if ($f -notmatch '^\\s*(?<col>[^ ]+)\\s+(?<op>eq|lt|le|ge|gt)\\s+(?<val>.+?)\\s*$') {{
+  foreach ($f in $Filters) {
+    if (-not $f) { continue }
+    if ($f -notmatch '^\\s*(?<col>[^ ]+)\\s+(?<op>eq|lt|le|ge|gt)\\s+(?<val>.+?)\\s*$') {
       throw "Bad filter syntax: '$f'"
-    }}
+    }
     $colName = $matches.col
     $op      = $matches.op
     $valRaw  = $matches.val.Trim()
 
-    if (-not $ColIndex.ContainsKey($colName)) {{ throw "Unknown column '$colName'." }}
+    if (-not $ColIndex.ContainsKey($colName)) { throw "Unknown column '$colName'." }
 
     # try to coerce types: int, datetime, else string
-    $val = if ($valRaw -match '^\\d+$') {{
+    $val = if ($valRaw -match '^\\d+$') {
       [int]$valRaw
-    }} elseif ($valRaw -match '^\\d{{4}}-\\d{{2}}-\\d{{2}}') {{
+    } elseif ($valRaw -match '^\\d{4}-\\d{2}-\\d{2}') {
       [datetime]::Parse($valRaw)
-    }} else {{
+    } else {
       # strip quotes if present
       $valRaw.Trim("'`"")
-    }}
+    }
     Add-Restriction -View $View -Col $ColIndex[$colName] -Op $op -Value $val
-  }}
-}}
+  }
+}
 """
 
-IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES = f"""
-function Convert-RawCertToBytes {{
+IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES = """
+function Convert-RawCertToBytes {
   param([Parameter(Mandatory)]$Val)
-  if ($Val -is [byte[]]) {{ return $Val }}
+  if ($Val -is [byte[]]) { return $Val }
   $s = [string]$Val
-  if ([string]::IsNullOrWhiteSpace($s)) {{ return $null }}
-  if ($s -match '-----BEGIN [^-]+-----') {{
+  if ([string]::IsNullOrWhiteSpace($s)) { return $null }
+  if ($s -match '-----BEGIN [^-]+-----') {
     $s = $s -replace '-----BEGIN [^-]+-----',''
     $s = $s -replace '-----END [^-]+-----',''
-  }}
+  }
   $s = $s -replace '\\s',''
   [Convert]::FromBase64String($s)
-}}
+}
 """
 
 def verify_connection_script():

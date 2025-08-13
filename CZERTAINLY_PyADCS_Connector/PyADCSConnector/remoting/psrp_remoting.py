@@ -34,11 +34,25 @@ class PsrpRemoting(object):
         self.protocol = SyncRunspacePool(wsman_info)
         self.protocol.open()
 
+    # Add this helper to the same class (or make it a module-level function).
+    @staticmethod
+    def _to_error_record(er):
+        exc = getattr(er, "exception", None)
+        msg = getattr(exc, "message", None) if exc else None
+        return {
+            "Message": msg or str(er),
+            "FullyQualifiedErrorId": getattr(er, "fully_qualified_error_id", None)
+                                     or getattr(er, "fully_qualified_id", None),
+            "CategoryInfo": str(getattr(er, "category_info", None)),
+            "ScriptStackTrace": getattr(er, "script_stack_trace", None),
+            "InvocationInfo": str(getattr(er, "invocation_info", None)),
+        }
+
     def run_ps(self, script):
         if not self.protocol or self.protocol.state != RunspacePoolState.Opened:
-            raise Exception("Runspace pool is not opened. Please connect first.")
+            raise PsrpExecutionException(-1, "Runspace pool is not opened. Please connect first.")
 
-        logger.debug("Running command: " + script)
+        logger.debug("Running command: %s", script)
 
         ps = SyncPowerShell(self.protocol)
         ps.add_script(script)
@@ -49,26 +63,15 @@ class PsrpRemoting(object):
             logger.exception("PSRP transport/protocol failure")
             raise PsrpExecutionException(-1, f"Transport/protocol error: {e}") from e
 
-        # Convert outputs to text
-        stdout_text = "\n".join(str(o) for o in (result or []))
+        stdout_text = "\n".join(map(str, result or []))
 
-        err_recs = []
-        if ps.streams and ps.streams.error:
-            for er in ps.streams.error:
-                exc = getattr(er, "exception", None)
-                msg = getattr(exc, "message", None) if exc else None
-                err_recs.append({
-                    "Message": msg or str(er),
-                    "FullyQualifiedErrorId": getattr(er, "fully_qualified_error_id", None)
-                                             or getattr(er, "fully_qualified_id", None),
-                    "CategoryInfo": str(getattr(er, "category_info", None)),
-                    "ScriptStackTrace": getattr(er, "script_stack_trace", None),
-                    "InvocationInfo": str(getattr(er, "invocation_info", None)),
-                })
+        err_stream = getattr(ps, "streams", None)
+        err_stream = getattr(err_stream, "error", None) if err_stream else None
+        err_recs = [self._to_error_record(er) for er in err_stream] if err_stream else []
 
-        stderr_text = "\n".join((d["Message"] or "") for d in err_recs)
-
+        stderr_text = "\n".join((d.get("Message") or "") for d in err_recs)
         had_errors = bool(err_recs)
+
         if had_errors:
             logger.error("PowerShell errors: %r", err_recs)
 
