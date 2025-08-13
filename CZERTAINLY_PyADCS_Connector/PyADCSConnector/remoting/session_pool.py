@@ -60,6 +60,19 @@ class SessionPool:
 
     # ---------- public API ----------
 
+    def force_new(self) -> "SessionAdapter":
+        """
+        Create and return a brand new connected session without using idle pool.
+        The caller is responsible for releasing it back with `release()` when done.
+        """
+        with self._cv:
+            if self._closed:
+                raise RuntimeError("Pool is closed")
+            # Directly create a connected session
+            s = self._create_connected_unlocked()
+            self._in_use += 1
+            return s
+
     def acquire(self, timeout: Optional[float] = None) -> SessionAdapter:
         deadline = time.time() + (timeout if timeout is not None else (self._acquire_timeout_s or 1e12))
         with self._cv:

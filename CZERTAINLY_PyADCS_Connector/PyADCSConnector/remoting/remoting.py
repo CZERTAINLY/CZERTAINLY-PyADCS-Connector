@@ -28,9 +28,7 @@ def invoke_remote_script(authority_instance: AuthorityInstance, script: str) -> 
     except Exception as e1:
         logger.warning("Session likely unhealthy; retrying once with a new session: %s", e1, exc_info=True)
         # Force-create a new session by temporarily bypassing the idle queue
-        with pool._cv:  # NOTE: if you prefer not to touch internals, add a public method like pool.force_new()
-            s = pool._create_connected()
-            pool._in_use += 1
+        s = pool.force_new()
 
         try:
             result = s.run_ps(script)
