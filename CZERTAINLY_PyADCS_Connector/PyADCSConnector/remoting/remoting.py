@@ -1,7 +1,6 @@
 import logging
 from base64 import b64encode
 
-from PyADCSConnector.exceptions.remoting_exception import RemotingException
 from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.remoting.pool_manager import global_pool_manager
 from PyADCSConnector.remoting.remote_result import RemoteResult

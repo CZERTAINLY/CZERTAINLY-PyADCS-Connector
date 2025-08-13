@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from typing import Callable, Deque, Optional, Tuple
 
-from .session_adapters import SessionAdapter
+from PyADCSConnector.remoting.session_adapters import SessionAdapter
 
 logger = logging.getLogger(__name__)
 

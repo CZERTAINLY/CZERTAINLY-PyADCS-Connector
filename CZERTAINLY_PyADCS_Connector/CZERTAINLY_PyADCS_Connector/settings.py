@@ -9,8 +9,11 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+import os
 import sys
 from pathlib import Path
+from typing import Dict
+
 import environ
 
 env = environ.Env()
@@ -18,6 +21,33 @@ environ.Env.read_env()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+LOG_LEVEL_PREFIX = "LOG_LEVEL_"
+
+def _to_logger_name(env_key_tail: str) -> str:
+    return env_key_tail.replace("__", ".").lower()  # leave single '_' alone
+
+def _collect_levels() -> Dict[str, str]:
+    levels: Dict[str, str] = {}
+    for key, val in os.environ.items():
+        if not key.startswith(LOG_LEVEL_PREFIX):
+            continue
+        name_tail = key[len(LOG_LEVEL_PREFIX):]
+        level = str(val).upper().strip()
+        if name_tail.upper() == "ROOT":
+            levels["__root__"] = level
+        else:
+            levels[_to_logger_name(name_tail)] = level
+    return levels
+
+LEVELS = _collect_levels()
+
+def _logger_entry(level: str):
+    # OFF disables entirely
+    if level in {"OFF", "NONE", "DISABLE", "DISABLED"}:
+        return {"handlers": ["console"], "level": "CRITICAL", "propagate": False}
+    # otherwise log to console at the given level
+    return {"handlers": ["console"], "level": level, "propagate": False}
 
 ADCS_SEARCH_PAGE_SIZE = env("ADCS_SEARCH_PAGE_SIZE", default=1000)
 ADCS_ISSUE_POLLING_INTERVAL = env("ADCS_ISSUE_POLLING_INTERVAL", default=100)
@@ -154,7 +184,7 @@ LOGGING = {
         },
         "console_formatter": {
             "()": "PyADCSConnector.utils.logging.MillisecondFormatter",
-            "format": "{asctime} {levelname} {module} {processName:s}-{process:d} {threadName:s}-{thread:d} "
+            "format": "{asctime} {levelname} {name} {module} {processName:s}-{process:d} {threadName:s}-{thread:d} "
                       "{funcName:s} : {message}",
             "datefmt": "%Y-%m-%dT%H:%M:%S.%f%z",
             "style": "{",
@@ -166,6 +196,7 @@ LOGGING = {
             "formatter": "console_formatter"
         },
     },
+    "loggers": {name: _logger_entry(level) for name, level in LEVELS.items()},
     "root": {
         "handlers": ["console"],
         "level": env("LOG_LEVEL", default="INFO"),
