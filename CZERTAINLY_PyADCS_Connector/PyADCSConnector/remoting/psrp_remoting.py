@@ -24,7 +24,6 @@ class PsrpRemoting(object):
         self.port = port
         self.transport = transport
         self.protocol = None
-        self.transport = transport
 
     def connect(self):
         t = self.transport.lower()
