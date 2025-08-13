@@ -1,6 +1,6 @@
 from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.remoting.winrm.scripts import get_templates_script
-from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance
+from PyADCSConnector.remoting.winrm_remoting import create_winrm_session_from_authority_instance
 from PyADCSConnector.services.attributes import *
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.dump_parser import DumpParser, TemplateData
@@ -9,7 +9,7 @@ from PyADCSConnector.utils.dump_parser import DumpParser, TemplateData
 def get_raprofile_attributes_list(uuid):
     authority_instance = AuthorityInstance.objects.get(uuid=uuid)
 
-    session = create_session_from_authority_instance(authority_instance)
+    session = create_winrm_session_from_authority_instance(authority_instance)
     session.connect()
     templates = session.run_ps(get_templates_script())
     session.disconnect()

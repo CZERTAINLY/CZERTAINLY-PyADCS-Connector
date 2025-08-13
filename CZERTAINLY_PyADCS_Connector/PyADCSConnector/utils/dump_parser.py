@@ -97,7 +97,7 @@ class AuthorityData:
 class DumpParser:
     @staticmethod
     def parse_certificates(input_data):
-        input_string = input_data.std_out.decode('utf-8')
+        input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
         in_cert = False
@@ -130,7 +130,7 @@ class DumpParser:
 
     @staticmethod
     def parse_identified_certificates(input_data):
-        input_string = input_data.std_out.decode('utf-8')
+        input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
         complete_record = False
@@ -158,7 +158,7 @@ class DumpParser:
 
     @staticmethod
     def parse_template_data(input_data):
-        input_string = input_data.std_out.decode('utf-8')
+        input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
         complete_record = False
@@ -194,7 +194,7 @@ class DumpParser:
 
     @staticmethod
     def parse_authority_data(input_data):
-        input_string = input_data.std_out.decode('utf-8')
+        input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
         complete_record = False

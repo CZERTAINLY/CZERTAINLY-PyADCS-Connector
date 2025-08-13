@@ -4,9 +4,11 @@ from PyADCSConnector.utils.revocation_reason import CertificateRevocationReason
 IMPORTS = """
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 $Host.UI.RawUI.BufferSize = New-Object Management.Automation.Host.Size (2048, $Host.UI.RawUI.BufferSize.Height)
+$ProgressPreference='SilentlyContinue'
+$PSModuleAutoLoadingPreference='None'
 """
 
-IMPORT_FUNCTION_ADD_RESTRICTION = """
+IMPORT_FUNCTION_ADD_RESTRICTION = f"""
 function Add-Restriction {{
   param(
     [__ComObject]$View, [int]$Col, [string]$Op, $Value,
@@ -26,7 +28,7 @@ function Add-Restriction {{
 }}
 """
 
-IMPORT_FUNCTION_APPLY_FILTERS = """
+IMPORT_FUNCTION_APPLY_FILTERS = f"""
 # Accepts simple filters like: "Request.Disposition ge 12", "CertificateTemplate eq WebServer"
 function Apply-Filters {{
   param([__ComObject]$View, [hashtable]$ColIndex, [string[]]$Filters)
@@ -55,7 +57,7 @@ function Apply-Filters {{
 }}
 """
 
-IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES = """
+IMPORT_FUNCTION_CONVERT_RAWCERTTOBYTES = f"""
 function Convert-RawCertToBytes {{
   param([Parameter(Mandatory)]$Val)
   if ($Val -is [byte[]]) {{ return $Val }}
@@ -138,7 +140,7 @@ do {{
     $cas += $obj
 }} while ($cfg.Next() -ne -1)
 
-$cas | Select Name,DisplayName,ComputerName,ConfigString,Type,IsEnterprise,IsRoot,IsAccessible,ServiceStatus | Format-List
+$cas | Select Name,DisplayName,ComputerName,ConfigString,Type,IsEnterprise,IsRoot,IsAccessible,ServiceStatus | Format-List | Out-String
 """
     return script
 
@@ -204,7 +206,7 @@ $TemplateList = foreach ($r in $results) {{
     }}
 }}
 
-$TemplateList | Sort-Object Name | Format-List
+$TemplateList | Sort-Object Name | Format-List | Out-String
 """
     return script
 
@@ -320,7 +322,7 @@ for ($row = $rows.Next(); $row -ne -1; $row = $rows.Next()) {{
   $i++
 }}
 
-$results
+$results | Format-List | Out-String
 """
     return script
 
@@ -431,7 +433,7 @@ for ($row = $rows.Next(); $row -ne -1; $row = $rows.Next()) {{
   }}) | Out-Null
 }}
 
-$results
+$results | Format-List | Out-String
 """
     return script
 
