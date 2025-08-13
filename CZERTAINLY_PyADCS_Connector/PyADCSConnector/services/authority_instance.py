@@ -34,8 +34,8 @@ def update_authority_instance(request_dto, authority_instance):
                                                                                 authority_instance.attributes)
     authority_instance.https = attribute_definition_utils.get_attribute_value(AUTHORITY_USE_HTTPS_ATTRIBUTE_NAME,
                                                                               authority_instance.attributes)
-    authority_instance.port = attribute_definition_utils.get_attribute_value(AUTHORITY_WINRM_PORT_ATTRIBUTE_NAME,
-                                                                             authority_instance.attributes)
+    authority_instance.port = int(attribute_definition_utils.get_attribute_value(AUTHORITY_WINRM_PORT_ATTRIBUTE_NAME,
+                                                                             authority_instance.attributes))
     authority_instance.credential = attribute_definition_utils.get_attribute_value(AUTHORITY_CREDENTIAL_ATTRIBUTE_NAME,
                                                                                    authority_instance.attributes)
 

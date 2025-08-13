@@ -51,7 +51,13 @@ class WinRmRemoting(object):
         logger.debug("Running Powershell script: " + script)
         # must use utf16 little endian on windows
         encoded_ps = b64encode(script.encode('utf_16_le')).decode('ascii')
-        result = self.run('powershell -encodedcommand {0}'.format(encoded_ps))
+
+        cmd = (
+            "powershell -NoProfile -NonInteractive "
+            "-ExecutionPolicy Bypass -NoLogo -EncodedCommand {0}"
+        ).format(encoded_ps)
+
+        result = self.run(cmd)
 
         return RemoteResult(
             status_code=result.status_code,
