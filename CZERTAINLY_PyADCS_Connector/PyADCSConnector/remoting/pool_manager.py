@@ -18,12 +18,12 @@ class PoolManager:
     def __init__(self, *, maxsize=8, min_warm=1, keepalive_interval_s=25, max_idle_s=600):
         self._lock = threading.Lock()
         self._pools: Dict[Tuple, SessionPool] = {}
-        self._cfg = dict(
-            maxsize=maxsize,
-            min_warm=min_warm,
-            keepalive_interval_s=keepalive_interval_s,
-            max_idle_s=max_idle_s,
-        )
+        self._cfg = {
+            "maxsize": maxsize,
+            "min_warm": min_warm,
+            "keepalive_interval_s": keepalive_interval_s,
+            "max_idle_s": max_idle_s,
+        }
 
     def _get_attr(self, authority_instance, name: str, default=None):
         cred = getattr(authority_instance, "credential", None) or {}

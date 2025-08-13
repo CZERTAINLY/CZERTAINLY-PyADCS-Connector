@@ -1,6 +1,7 @@
 import logging
 from base64 import b64encode
 
+from PyADCSConnector.exceptions.remoting_exception import RemotingException
 from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.remoting.pool_manager import global_pool_manager
 from PyADCSConnector.remoting.remote_result import RemoteResult
@@ -28,17 +29,11 @@ def invoke_remote_script(authority_instance: AuthorityInstance, script: str) -> 
         logger.warning("Session likely unhealthy; retrying once with a new session: %s", e1, exc_info=True)
         # Force-create a new session by temporarily bypassing the idle queue
         with pool._cv:  # NOTE: if you prefer not to touch internals, add a public method like pool.force_new()
-            try:
-                s = pool._create_connected()
-                pool._in_use += 1
-            except Exception:
-                raise
+            s = pool._create_connected()
+            pool._in_use += 1
+
         try:
-            try:
-                result = s.run_ps(script)
-            finally:
-                pool.release(s)
-            return result
-        except Exception:
-            # Let caller see the second failure
-            raise
+            result = s.run_ps(script)
+        finally:
+            pool.release(s)
+        return result
