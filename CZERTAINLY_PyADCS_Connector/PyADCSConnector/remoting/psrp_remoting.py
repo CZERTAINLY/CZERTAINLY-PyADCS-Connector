@@ -23,7 +23,7 @@ class PsrpRemoting(object):
 
     def connect(self):
         wsman_info = WSManInfo(
-            server=self.hostname ,
+            server=self.hostname,
             username=self.username,
             password=self.password,
             port=self.port,
