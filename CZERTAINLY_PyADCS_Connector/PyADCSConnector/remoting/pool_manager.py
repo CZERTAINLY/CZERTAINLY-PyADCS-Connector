@@ -1,12 +1,17 @@
+import logging
 import threading
-from functools import partial
 from typing import Dict, Tuple
 
+from CZERTAINLY_PyADCS_Connector.settings import ADCS_POOL_MAX_SIZE, ADCS_POOL_MIN_WARM_SIZE, \
+    ADCS_POOL_KEEPALIVE_INTERVAL, ADCS_POOL_MAX_IDLE_SECONDS
 from PyADCSConnector.remoting.psrp_remoting import create_psrp_session_from_authority_instance
 from PyADCSConnector.remoting.remoting_protocol import RemotingProtocol
 from PyADCSConnector.remoting.session_adapters import WinRMAdapter, PSRPAdapter
 from PyADCSConnector.remoting.session_pool import SessionPool
 from PyADCSConnector.remoting.winrm_remoting import create_winrm_session_from_authority_instance
+from PyADCSConnector.utils import attribute_definition_utils
+
+logger = logging.getLogger(__name__)
 
 
 class PoolManager:
@@ -55,13 +60,16 @@ class PoolManager:
             if protocol == RemotingProtocol.WINRM:
                 def _factory():
                     sess = create_winrm_session_from_authority_instance(authority_instance)
-                    return WinRMAdapter(sess)
+                    return WinRMAdapter(sess, key)
                 name = f"winrm://{authority_instance.address}:{authority_instance.port}"
             else:
                 def _factory():
                     sess = create_psrp_session_from_authority_instance(authority_instance)
-                    return PSRPAdapter(sess)
+                    return PSRPAdapter(sess, key)
                 name = f"psrp://{authority_instance.address}:{authority_instance.port}"
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Creating new session pool for {name} with key {key} and config {self._cfg}")
 
             pool = SessionPool(factory=_factory, name=name, **self._cfg)
             self._pools[key] = pool
@@ -69,4 +77,9 @@ class PoolManager:
 
 
 # singleton
-global_pool_manager = PoolManager()
+global_pool_manager = PoolManager(
+    maxsize=ADCS_POOL_MAX_SIZE,
+    min_warm=ADCS_POOL_MIN_WARM_SIZE,
+    keepalive_interval_s=ADCS_POOL_KEEPALIVE_INTERVAL,
+    max_idle_s=ADCS_POOL_MAX_IDLE_SECONDS,
+)

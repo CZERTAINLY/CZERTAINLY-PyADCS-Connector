@@ -22,6 +22,7 @@ class SessionPool:
         acquire_timeout_s: Optional[float] = None,
         max_idle_s: Optional[int] = 600,  # trim idle > 10m (None = never)
         name: str = "session-pool",
+        stale_after_s: int = 120,
     ):
         if maxsize < 1:
             raise ValueError("maxsize must be >= 1")
@@ -35,6 +36,7 @@ class SessionPool:
         self._acquire_timeout_s = acquire_timeout_s
         self._max_idle_s = max_idle_s
         self._name = name
+        self._stale_after_s = stale_after_s
 
         self._lock = threading.Lock()
         self._cv = threading.Condition(self._lock)
@@ -54,59 +56,38 @@ class SessionPool:
     # ---------- public API ----------
 
     def acquire(self, timeout: Optional[float] = None) -> SessionAdapter:
-        """
-        Block until a session is available; create new if under maxsize.
-        Returns a live, healthy session.
-        """
         deadline = time.time() + (timeout if timeout is not None else (self._acquire_timeout_s or 1e12))
         with self._cv:
             while True:
                 if self._closed:
                     raise RuntimeError("Pool is closed")
 
-                # Reuse idle session if any
                 if self._idle:
-                    s, _ = self._idle.popleft()
+                    s, last_used = self._idle.popleft()
                     self._in_use += 1
-                    # sanity check: ensure healthy
-                    if not self._safe_ping(s):
-                        self._destroy(s)
-                        self._in_use -= 1
-                        continue  # try again in the loop
+                    # no ping here; optionally check staleness (see below)
+                    self._last_used = last_used
                     return s
 
-                # Create a new one if allowed
                 if self._total < self._maxsize:
                     self._in_use += 1
                     s = self._create_connected()
+                    self._last_used = time.time()
                     return s
 
-                # Else wait until someone releases
                 remaining = deadline - time.time()
                 if remaining <= 0:
                     raise TimeoutError("Timed out acquiring a session from the pool")
-
                 self._cv.wait(timeout=remaining)
 
     def release(self, session: SessionAdapter) -> None:
-        """
-        Return a session to the pool. If unhealthy, it is destroyed and a waiter is notified.
-        """
         with self._cv:
             if self._closed:
-                # if closed, we just destroy it
                 self._destroy(session)
                 return
-
-            if not self._safe_ping(session):
-                self._destroy(session)
-                self._in_use -= 1
-                self._cv.notify()
-                return
-
             self._idle.append((session, time.time()))
             self._in_use -= 1
-            self._cv.notify()  # wake one waiter
+            self._cv.notify()
 
     def close(self) -> None:
         """
@@ -141,12 +122,13 @@ class SessionPool:
 
     def _create_connected(self) -> SessionAdapter:
         s = self._factory()
+        s.connect()
+        # pre-warm the session; ignore failures
         try:
-            s.connect()
+            if hasattr(s, "init"):
+                s.init()
         except Exception:
-            logger.exception("Failed to connect new session")
-            # If connect fails, do not increase totals
-            raise
+            logger.debug("session init failed; continuing", exc_info=True)
         self._total += 1
         return s
 

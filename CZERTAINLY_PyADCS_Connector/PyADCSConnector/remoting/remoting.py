@@ -17,12 +17,28 @@ def invoke_remote_script_uuid(authority_instance_uuid: str, script: str) -> Remo
     return invoke_remote_script(authority_instance, script)
 
 def invoke_remote_script(authority_instance: AuthorityInstance, script: str) -> RemoteResult:
-    # decide protocol exactly as you already do
     remoting_protocol = RemotingProtocol.PSRP if winrm_limit_reached(script) else RemotingProtocol.WINRM
-
-    # borrow from the appropriate pool (created lazily on first access)
     pool = global_pool_manager.get_pool(authority_instance, remoting_protocol)
 
-    # borrow() blocks when the pool is at capacity and releases on context exit
-    with pool.borrow() as session:
-        return session.run_ps(script)
+    # optimistic run; if it explodes with a transport/session error, retry once with a fresh session
+    try:
+        with pool.borrow() as session:
+            return session.run_ps(script)
+    except Exception as e1:
+        logger.warning("Session likely unhealthy; retrying once with a new session: %s", e1, exc_info=True)
+        # Force-create a new session by temporarily bypassing the idle queue
+        with pool._cv:  # NOTE: if you prefer not to touch internals, add a public method like pool.force_new()
+            try:
+                s = pool._create_connected()
+                pool._in_use += 1
+            except Exception:
+                raise
+        try:
+            try:
+                result = s.run_ps(script)
+            finally:
+                pool.release(s)
+            return result
+        except Exception:
+            # Let caller see the second failure
+            raise

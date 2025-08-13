@@ -103,6 +103,6 @@ for ($row = $rows.Next(); $row -ne -1; $row = $rows.Next()) {{
   $i++
 }}
 
-$results | Format-List | Out-String
+$results | ConvertTo-Json -Compress -Depth 4
 """
     return script
