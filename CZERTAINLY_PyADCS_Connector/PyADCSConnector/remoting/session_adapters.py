@@ -1,63 +1,69 @@
 import logging
-from typing import Protocol
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable, Callable, Any
 
 logger = logging.getLogger(__name__)
 
-class SessionAdapter(Protocol):
+
+class InnerPSSession(Protocol):
     def connect(self) -> None: ...
     def disconnect(self) -> None: ...
-    def run_ps(self, script: str): ...
+    def run_ps(self, script: str) -> Any: ...
+
+@runtime_checkable
+class SessionAdapter(Protocol):
+    key: str
+    def connect(self) -> None: ...
+    def disconnect(self) -> None: ...
+    def run_ps(self, script: str) -> Any: ...
     def ping(self) -> bool: ...
+    def init(self) -> None: ...  # make it part of the contract to avoid hasattr checks
 
-class WinRMAdapter:
-    def __init__(self, inner, key):  # inner = WinRmRemoting
-        self._s = inner
-        self.key = key
+SHARED_INIT_SCRIPT = r"""
+    $ProgressPreference = 'SilentlyContinue'
+    $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+"""
 
-    def init(self) -> None:
-        # One-time run when the session is created.
-        init_script = r"""
-            $ProgressPreference = 'SilentlyContinue'
-            $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
-        """
-        self.run_ps(init_script)
+PingOk = Callable[[Any], bool]
 
-    def connect(self): self._s.connect()
-    def disconnect(self): self._s.disconnect()
-    def run_ps(self, script: str): return self._s.run_ps(script)
-
-    def ping(self) -> bool:
-        try:
-            # cheap, low-output no-op
-            logger.debug(f"Pinging {self.key}")
-            return self._s.run_ps("$null=1").status_code == 0
-        except Exception:
-            logger.exception("WinRM keepalive ping failed")
-            return False
-
-
-class PSRPAdapter:
-    def __init__(self, inner, key):  # inner = PsrpRemoting
-        self._s = inner
-        self.key = key
+@dataclass
+class _BasePSAdapter(SessionAdapter):
+    inner: InnerPSSession
+    key: str
+    name: str
+    ping_ok: PingOk
 
     def init(self) -> None:
-        # One-time run when the session is created.
-        init_script = r"""
-            $ProgressPreference = 'SilentlyContinue'
-            $PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
-        """
-        self.run_ps(init_script)
+        self.run_ps(SHARED_INIT_SCRIPT)
 
-    def connect(self): self._s.connect()
-    def disconnect(self): self._s.disconnect()
-    def run_ps(self, script: str): return self._s.run_ps(script)
+    def connect(self) -> None: self.inner.connect()
+    def disconnect(self) -> None: self.inner.disconnect()
+    def run_ps(self, script: str): return self.inner.run_ps(script)
 
     def ping(self) -> bool:
         try:
             logger.debug(f"Pinging {self.key}")
-            res = self._s.run_ps("$null=1")
-            return res.status_code == 0 and not res.had_errors
+            res = self.inner.run_ps("$null=1")
+            return self.ping_ok(res)
         except Exception:
-            logger.exception("PSRP keepalive ping failed")
+            logger.exception(f"{self.name} keepalive ping failed")
             return False
+
+
+class WinRMAdapter(_BasePSAdapter):
+    def __init__(self, inner: InnerPSSession, key: str):
+        super().__init__(
+            inner=inner,
+            key=key,
+            name="WinRM",
+            ping_ok=lambda r: getattr(r, "status_code", 1) == 0,
+        )
+
+class PSRPAdapter(_BasePSAdapter):
+    def __init__(self, inner: InnerPSSession, key: str):
+        super().__init__(
+            inner=inner,
+            key=key,
+            name="PSRP",
+            ping_ok=lambda r: getattr(r, "status_code", 1) == 0 and not getattr(r, "had_errors", False),
+        )
