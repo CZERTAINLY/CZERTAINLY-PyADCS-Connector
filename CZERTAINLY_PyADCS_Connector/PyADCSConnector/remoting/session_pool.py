@@ -20,7 +20,7 @@ class SessionPool:
         max_idle_s: Optional[int] = 900,
         name: str = "session-pool",
 
-        # NEW: background warm-up controls
+        # background warm-up controls
         eager_warm: bool = False,       # if True, start warmer immediately; else on first acquire
         warm_target: Optional[int] = None,  # default = min_warm
         warm_parallelism: int = 2,      # build at most N sessions concurrently
@@ -48,7 +48,6 @@ class SessionPool:
         self._total = 0
         self._closed = False
 
-        # NEW
         self._warmer_started = False
 
         # maintainer keeps sessions healthy/trimmed
@@ -68,7 +67,6 @@ class SessionPool:
         with self._cv:
             if self._closed:
                 raise RuntimeError("Pool is closed")
-            # Directly create a connected session
             s = self._create_connected_unlocked()
             self._in_use += 1
             return s
@@ -127,14 +125,13 @@ class SessionPool:
                 return False
         return _Borrow()
 
-    # ---------- internals ----------
+    # ---------- internals (shared) ----------
 
     def _create_connected_unlocked(self) -> SessionAdapter:
         # lock is already held by caller
         s = self._factory()
         try:
             s.connect()
-            # Optional one-time init if your adapter implements it
             if hasattr(s, "init"):
                 try:
                     s.init()
@@ -147,8 +144,10 @@ class SessionPool:
         return s
 
     def _destroy_unlocked(self, s: SessionAdapter) -> None:
-        try: s.disconnect()
-        except Exception: logger.debug("Ignoring error on disconnect", exc_info=True)
+        try:
+            s.disconnect()
+        except Exception:
+            logger.debug("Ignoring error on disconnect", exc_info=True)
         self._total -= 1
 
     def _start_warmer(self):
@@ -157,6 +156,181 @@ class SessionPool:
         self._warmer_started = True
         t = threading.Thread(target=self._warmer, name=f"{self._name}-warmer", daemon=True)
         t.start()
+
+    # ---------- helpers used by _maintainer ----------
+
+    def _health_check_unlocked(self, s: SessionAdapter) -> bool:
+        """Return True if the session responds to ping(); lock must be held."""
+        try:
+            return s.ping()
+        except Exception:
+            return False
+
+    def _should_trim_unlocked(self, now: float, last_used: float, target_keep: int) -> bool:
+        """Decide whether to trim an idle session based on age and keep target."""
+        if self._max_idle_s is None:
+            return False
+        return (now - last_used) > self._max_idle_s and self._total > target_keep
+
+    def _connect_new_session_outside_lock(self) -> Optional[SessionAdapter]:
+        """
+        Create/connect/init a session while releasing the condition lock to avoid blocking.
+        Returns a connected session or None on failure. Lock is held on entry and exit.
+        """
+        try:
+            s = self._factory()
+        except Exception:
+            logger.debug("maintainer factory failure", exc_info=True)
+            return None
+
+        self._cv.release()
+        try:
+            try:
+                s.connect()
+                if hasattr(s, "init"):
+                    try:
+                        s.init()
+                    except Exception:
+                        logger.debug("session init failed; continuing", exc_info=True)
+            except Exception:
+                logger.debug("maintainer failed to connect session", exc_info=True)
+                try:
+                    s.disconnect()
+                except Exception:
+                    pass
+                return None
+            return s
+        finally:
+            self._cv.acquire()
+
+    def _rebuild_idle_queue_unlocked(self, now: float, target_keep: int) -> Tuple[int, int]:
+        """
+        Sweep idle sessions: trim stale, drop unhealthy, keep good ones.
+        Returns (unhealthy_count, trimmed_count). Lock must be held.
+        """
+        new_idle: Deque[Tuple[SessionAdapter, float]] = deque()
+        unhealthy = 0
+        trimmed = 0
+
+        while self._idle:
+            s, last_used = self._idle.popleft()
+
+            if self._should_trim_unlocked(now, last_used, target_keep):
+                self._destroy_unlocked(s)
+                trimmed += 1
+                continue
+
+            if not self._health_check_unlocked(s):
+                self._destroy_unlocked(s)
+                unhealthy += 1
+                continue
+
+            new_idle.append((s, last_used))
+
+        self._idle = new_idle
+        return unhealthy, trimmed
+
+    def _top_up_min_warm_unlocked(self, target_keep: int, now: float) -> None:
+        """
+        Top up the pool to at least target_keep sessions (idle+in_use),
+        without exceeding maxsize. Lock must be held.
+        """
+        while (self._total < self._maxsize) and (len(self._idle) + self._in_use < target_keep):
+            s = self._connect_new_session_outside_lock()
+            if s is None:
+                break  # stop on first failure; try again next tick
+
+            if self._closed:
+                try:
+                    s.disconnect()
+                except Exception:
+                    pass
+                return
+
+            self._idle.append((s, now))
+            self._total += 1
+
+    # ---------- maintainer (refactored) ----------
+
+    def _maintainer(self):
+        interval = max(5, self._keepalive_interval_s)
+        while True:
+            time.sleep(interval)
+            with self._cv:
+                if self._closed:
+                    return
+
+                now = time.time()
+                target_keep = max(self._min_warm, 0)
+
+                unhealthy, trimmed = self._rebuild_idle_queue_unlocked(now, target_keep)
+                self._top_up_min_warm_unlocked(target_keep, now)
+
+                if unhealthy or trimmed:
+                    logger.debug(
+                        "[%s] maintainer: unhealthy=%s trimmed=%s total=%s in_use=%s idle=%s",
+                        self._name, unhealthy, trimmed, self._total, self._in_use, len(self._idle)
+                    )
+
+    # ---------- helpers used by _warmer ----------
+
+    def _warm_batch_size_unlocked(self) -> int:
+        """
+        Decide how many sessions to create this tick, respecting:
+        - warm target
+        - maxsize
+        - parallelism
+        """
+        target = max(0, min(self._warm_target, self._maxsize))
+        have = self._total
+        want = max(0, target - have)
+        room = max(0, self._maxsize - self._total)
+        return min(want, room, self._warm_parallelism)
+
+    def _try_build_one_warm_session_unlocked(self) -> bool:
+        """
+        Build one session (releasing the lock during connect) and enqueue it as idle.
+        Returns True on success, False on failure. Lock must be held on entry/exit.
+        """
+        try:
+            s = self._factory()
+        except Exception:
+            logger.exception("warmer factory failure")
+            return False
+
+        self._cv.release()
+        try:
+            try:
+                s.connect()
+                if hasattr(s, "init"):
+                    try:
+                        s.init()
+                    except Exception:
+                        logger.debug("session init failed; continuing", exc_info=True)
+            except Exception:
+                logger.exception("warmer failed to connect session")
+                try:
+                    s.disconnect()
+                except Exception:
+                    pass
+                time.sleep(0.2)  # small backoff on per-attempt failure
+                return False
+        finally:
+            self._cv.acquire()
+
+        if self._closed:
+            try:
+                s.disconnect()
+            except Exception:
+                pass
+            return False
+
+        self._idle.append((s, time.time()))
+        self._total += 1
+        self._cv.notify()
+        return True
+
+    # ---------- warmer (refactored) ----------
 
     def _warmer(self):
         """
@@ -168,111 +342,17 @@ class SessionPool:
             with self._cv:
                 if self._closed:
                     return
-                target = max(0, min(self._warm_target, self._maxsize))
 
-                # How many sessions exist or are in-use
-                have = self._total
-                want = max(0, target - have)
+                to_create = self._warm_batch_size_unlocked()
 
-                # also ensure we don't exceed maxsize when callers are in-use
-                room = max(0, self._maxsize - self._total)
-                to_create = min(want, room, self._warm_parallelism)
-
-                if to_create == 0:
-                    # Re-check later; don't spin
-                    pass
-                else:
-                    # create N sessions while briefly releasing the lock per session
+                if to_create > 0:
                     for _ in range(to_create):
                         if self._closed:
                             return
-                        # Create one
-                        try:
-                            s = self._factory()
-                            # Release lock while connecting (slow I/O), reacquire to update counters
-                            self._cv.release()
-                            try:
-                                s.connect()
-                                if hasattr(s, "init"):
-                                    try:
-                                        s.init()
-                                    except Exception:
-                                        logger.debug("session init failed; continuing", exc_info=True)
-                            except Exception:
-                                logger.exception("warmer failed to connect session")
-                                # drop and continue; small backoff
-                                try:
-                                    s.disconnect()
-                                except Exception:
-                                    pass
-                                time.sleep(0.2)
-                            finally:
-                                self._cv.acquire()
+                        if self._total >= self._maxsize:
+                            break
+                        self._try_build_one_warm_session_unlocked()
+                # else: nothing to do this tick
 
-                            # If pool closed during connect, discard
-                            if self._closed:
-                                try: s.disconnect()
-                                except Exception: pass
-                                return
-
-                            self._idle.append((s, time.time()))
-                            self._total += 1
-                            self._cv.notify()
-                        except Exception:
-                            logger.exception("warmer factory failure")
-                            time.sleep(0.2)
-
-            # sleep a bit before next pass; increase if we failed repeatedly
             time.sleep(backoff)
             backoff = min(backoff * 2, 1.0)
-
-    def _maintainer(self):
-        interval = max(5, self._keepalive_interval_s)
-        while True:
-            time.sleep(interval)
-            with self._cv:
-                if self._closed:
-                    return
-                now = time.time()
-                new_idle: Deque[Tuple[SessionAdapter, float]] = deque()
-                unhealthy = 0
-                trimmed = 0
-                target_keep = max(self._min_warm, 0)
-
-                while self._idle:
-                    s, last_used = self._idle.popleft()
-                    if self._max_idle_s is not None and (now - last_used) > self._max_idle_s and self._total > target_keep:
-                        self._destroy_unlocked(s); trimmed += 1; continue
-                    # cheap health check only here (not on acquire)
-                    try:
-                        ok = s.ping()
-                    except Exception:
-                        ok = False
-                    if not ok:
-                        self._destroy_unlocked(s); unhealthy += 1; continue
-                    new_idle.append((s, last_used))
-
-                self._idle = new_idle
-
-                # top-up to min_warm if needed (1-by-1, non-blocking)
-                while (self._total < self._maxsize) and (len(self._idle) + self._in_use < target_keep):
-                    try:
-                        s = self._factory()
-                        self._cv.release()
-                        try:
-                            s.connect()
-                            if hasattr(s, "init"):
-                                try:
-                                    s.init()
-                                except Exception:
-                                    logger.debug("session init failed; continuing", exc_info=True)
-                        finally:
-                            self._cv.acquire()
-                        self._idle.append((s, now))
-                        self._total += 1
-                    except Exception:
-                        break
-
-                if unhealthy or trimmed:
-                    logger.debug("[%s] maintainer: unhealthy=%s trimmed=%s total=%s in_use=%s idle=%s",
-                                 self._name, unhealthy, trimmed, self._total, self._in_use, len(self._idle))
