@@ -43,6 +43,7 @@ PyADCS `Connector` is provided as a Docker container. Use the `czertainly/czerta
 | `ADCS_SEARCH_PAGE_SIZE`        | Number of entries to return in one page                            | ![](https://img.shields.io/badge/-NO-red.svg)      | `500`         |
 | `ADCS_ISSUE_POLLING_INTERVAL`  | Interval in milliseconds to poll for issued certificates           | ![](https://img.shields.io/badge/-NO-red.svg)      | `100`         |
 | `ADCS_ISSUE_POLLING_TIMEOUT`   | Timeout in milliseconds to wait for issued certificates            | ![](https://img.shields.io/badge/-NO-red.svg)      | `3000`        |
+| `ADCS_POOL_ENABLED`            | Enable connection pool                                             | ![](https://img.shields.io/badge/-NO-red.svg)      | `false`       |
 | `ADCS_POOL_MAX_SIZE`           | Maximum size of the connection pool                                | ![](https://img.shields.io/badge/-NO-red.svg)      | `30`          |
 | `ADCS_POOL_MIN_WARM_SIZE`      | Minimum size of the warm connection pool                           | ![](https://img.shields.io/badge/-NO-red.svg)      | `10`          |
 | `ADCS_POOL_MAX_IDLE_SECONDS`   | Maximum idle time in seconds for the connection pool               | ![](https://img.shields.io/badge/-NO-red.svg)      | `900`         |

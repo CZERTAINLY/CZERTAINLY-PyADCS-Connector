@@ -1,5 +1,5 @@
 from PyADCSConnector.models.authority_instance import AuthorityInstance
-from PyADCSConnector.remoting.winrm.scripts import get_templates_script
+from PyADCSConnector.remoting.scripts import get_templates_script
 from PyADCSConnector.remoting.winrm_remoting import create_winrm_session_from_authority_instance
 from PyADCSConnector.services.attributes import *
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod

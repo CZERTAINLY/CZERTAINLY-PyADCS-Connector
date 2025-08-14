@@ -10,7 +10,7 @@ from PyADCSConnector.exceptions.validation_exception import ValidationException
 from PyADCSConnector.objects.certificate_dto import CertificateDto
 from PyADCSConnector.objects.certificate_request_format import CertificateRequestFormat
 from PyADCSConnector.remoting.remoting import invoke_remote_script_uuid
-from PyADCSConnector.remoting.winrm.scripts import get_revoke_script, identify_certificate_script, \
+from PyADCSConnector.remoting.scripts import get_revoke_script, identify_certificate_script, \
     submit_certificate_request_script
 from PyADCSConnector.services.attributes.raprofile_attributes import RAPROFILE_TEMPLATE_NAME_ATTRIBUTE_NAME, \
     RAPROFILE_SELECT_CA_METHOD_ATTRIBUTE_NAME, RAPROFILE_CA_NAME_ATTRIBUTE_NAME, RAPROFILE_CONFIGSTRING_ATTRIBUTE_NAME

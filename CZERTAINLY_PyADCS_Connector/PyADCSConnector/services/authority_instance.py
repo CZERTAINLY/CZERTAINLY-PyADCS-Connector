@@ -2,7 +2,7 @@ from PyADCSConnector.exceptions.authority_exception import AuthorityException
 from PyADCSConnector.exceptions.remoting_exception import RemotingException
 from PyADCSConnector.models.authority_instance import AuthorityInstance
 from PyADCSConnector.remoting.remoting import invoke_remote_script, invoke_remote_script_uuid
-from PyADCSConnector.remoting.winrm.scripts import get_cas_script, get_templates_script, verify_connection_script
+from PyADCSConnector.remoting.scripts import get_cas_script, get_templates_script, verify_connection_script
 from PyADCSConnector.services.attributes.authority_attributes import *
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.dump_parser import DumpParser

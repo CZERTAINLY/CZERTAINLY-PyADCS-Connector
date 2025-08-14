@@ -12,7 +12,7 @@ from PyADCSConnector.objects.discovery_certificate_dto import DiscoveryCertifica
 from PyADCSConnector.objects.discovery_history_request_dto import DiscoveryHistoryRequestDto
 from PyADCSConnector.objects.discovery_history_response_dto import DiscoveryHistoryResponseDto
 from PyADCSConnector.remoting.remoting import invoke_remote_script
-from PyADCSConnector.remoting.winrm.scripts import get_cas_script, dump_certificates_script
+from PyADCSConnector.remoting.scripts import get_cas_script, dump_certificates_script
 from PyADCSConnector.services.attributes.discovery_attributes import *
 from PyADCSConnector.services.attributes.metadata_attributes import get_ca_name_metadata_attribute, \
     get_template_name_metadata_attribute, get_failed_reason_metadata_attribute
