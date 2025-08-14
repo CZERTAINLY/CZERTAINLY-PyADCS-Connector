@@ -250,7 +250,7 @@ class SessionPool:
             self._idle.append((s, now))
             self._total += 1
 
-    # ---------- maintainer (refactored) ----------
+    # ---------- maintainer ----------
 
     def _maintainer(self):
         interval = max(5, self._keepalive_interval_s)
@@ -330,7 +330,28 @@ class SessionPool:
         self._cv.notify()
         return True
 
-    # ---------- warmer (refactored) ----------
+    # ---------- warmer ----------
+
+    def _warm_tick_unlocked(self) -> bool:
+        """
+        One warmer tick. Returns True if the pool is closed (caller should stop).
+        Lock must be held on entry/exit.
+        """
+        if self._closed:
+            return True
+
+        to_create = self._warm_batch_size_unlocked()
+
+        # Loop does nothing if to_create == 0 (no extra branch needed).
+        for _ in range(to_create):
+            if self._closed:
+                return True
+            # Guard against races even though _warm_batch_size_unlocked() respects maxsize.
+            if self._total >= self._maxsize:
+                break
+            self._try_build_one_warm_session_unlocked()
+
+        return False
 
     def _warmer(self):
         """
@@ -340,19 +361,7 @@ class SessionPool:
         backoff = 0.05
         while True:
             with self._cv:
-                if self._closed:
+                if self._warm_tick_unlocked():
                     return
-
-                to_create = self._warm_batch_size_unlocked()
-
-                if to_create > 0:
-                    for _ in range(to_create):
-                        if self._closed:
-                            return
-                        if self._total >= self._maxsize:
-                            break
-                        self._try_build_one_warm_session_unlocked()
-                # else: nothing to do this tick
-
             time.sleep(backoff)
             backoff = min(backoff * 2, 1.0)
