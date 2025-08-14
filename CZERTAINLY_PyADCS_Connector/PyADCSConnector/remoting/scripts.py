@@ -95,7 +95,7 @@ function Convert-RawCertToBytes {
     $s = $s -replace '-----END [^-]+-----',''
   }
   $s = $s -replace '\\s',''
-  [Convert]::FromBase64String($s)
+  # [Convert]::FromBase64String($s)
 }
 """
 
@@ -167,7 +167,7 @@ try {{
       $cas += $obj
   }} while ($cfg.Next() -ne -1)
 
-  $__out = $cas | Select Name,DisplayName,ComputerName,ConfigString,Type,IsEnterprise,IsRoot,IsAccessible,ServiceStatus | Format-List | Out-String
+  $__out = $cas | Select Name,DisplayName,ComputerName,ConfigString,Type,IsEnterprise,IsRoot,IsAccessible,ServiceStatus | ConvertTo-Json -Compress -Depth 4
 }} finally {{
   __Release-AllCom
 }}
@@ -237,7 +237,7 @@ $TemplateList = foreach ($r in $results) {{
     }}
 }}
 
-$TemplateList | Sort-Object Name | Format-List | Out-String
+$TemplateList | Sort-Object Name | ConvertTo-Json -Compress -Depth 4
 """
     return script
 
@@ -331,7 +331,7 @@ try {{
 
     $raw = $vals['RawCertificate']
     $rawBytes = if ($null -ne $raw) {{ Convert-RawCertToBytes $raw }} else {{ $null }}
-    $b64 = if ($rawBytes) {{ [Convert]::ToBase64String($rawBytes) }} else {{ $null }}
+    # $b64 = if ($rawBytes) {{ [Convert]::ToBase64String($rawBytes) }} else {{ $null }}
 
     $tmpl = [string]$vals['CertificateTemplate']
     $tmplPretty = if ($tmpl -match '^\\d+(\\.\\d+)+$') {{ $tmpl }} else {{ $tmpl }}
@@ -344,7 +344,7 @@ try {{
       'Request.SubmittedWhen'      = $vals['Request.SubmittedWhen']
       'Request.CommonName'         = $vals['Request.CommonName']
       CertificateTemplate          = $tmpl
-      RawCertificate               = $b64
+      RawCertificate               = $rawBytes
       CertificateTemplateOid       = $tmplPretty
       RowId                        = $vals['RequestID']
       ConfigString                 = $caName
@@ -355,7 +355,7 @@ try {{
     $i++
   }}
 
-  $__out = $results | Format-List | Out-String
+  $__out = $results | ConvertTo-Json -Compress -Depth 4
 }} finally {{
   __Release-AllCom
 }}
@@ -372,7 +372,9 @@ def submit_certificate_request_script(request, ca: AuthorityData, template: Temp
 try {{
   $config = "{ca.config_string}"
   $template = "CertificateTemplate:{template.name}"
-  $encoding = 0x1
+  $CR_OUT_BASE64 = 0x1
+  $CR_OUT_NOCRLF = 0x40000000
+  $encoding = $CR_OUT_BASE64 -bor $CR_OUT_NOCRLF
   $pollMilliseconds = {polling_interval}
   $timeoutMilliseconds = {timeout}
 
@@ -399,7 +401,11 @@ try {{
       }}
   }}
 
-  $__out = $certB64
+  $__out = [pscustomobject]@{{
+    request_id   = $requestId
+    disposition  = $disposition
+    certificate_b64 = $certB64
+  }} | ConvertTo-Json -Compress -Depth 4
 }} finally {{
   __Release-AllCom
 }}
@@ -478,7 +484,7 @@ try {{
     }}) | Out-Null
   }}
 
-  $__out = $results | Format-List | Out-String
+  $__out = $results | ConvertTo-Json -Compress -Depth 4
 }} finally {{
   __Release-AllCom
 }}

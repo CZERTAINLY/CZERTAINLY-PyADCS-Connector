@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 
 from cryptography import x509
@@ -17,7 +18,7 @@ from PyADCSConnector.services.attributes.raprofile_attributes import RAPROFILE_T
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.ca_select_method import CaSelectMethod
 from PyADCSConnector.utils.cms_utils import create_cms
-from PyADCSConnector.utils.dump_parser import TemplateData, DumpParser, AuthorityData
+from PyADCSConnector.utils.dump_parser import TemplateData, DumpParser, AuthorityData, _safe_json_loads
 
 logger = logging.getLogger(__name__)
 
@@ -111,8 +112,15 @@ def issue_new_certificate(uuid, certificate_request, request_format: Certificate
 
 
 def get_certificate_data(result):
-    input_string = result.std_out.decode('utf-8')
-    return ''.join(input_string.splitlines())
+    records = _safe_json_loads(result.std_out)
+    if not records:
+        raise ValueError("No data returned from script")
+    # submit_certificate_request_script returns a single object
+    record = records[0]
+    cert_b64 = record.get("certificate_b64")
+    if not cert_b64:
+        raise ValueError("certificate_b64 not found in script output")
+    return cert_b64
 
 
 def get_certificate_serial_number(certificate):

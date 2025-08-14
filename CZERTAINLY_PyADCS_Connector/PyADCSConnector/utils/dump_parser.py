@@ -1,3 +1,13 @@
+import json
+
+
+def _get_any(d, *keys, default=None):
+    for k in keys:
+        if k in d:
+            return d[k]
+    return default
+
+
 class ParseResult:
     def __init__(self, template, certificate):
         self.template = template
@@ -30,13 +40,13 @@ class TemplateData:
 
     @staticmethod
     def from_dict(template):
-        template_data = TemplateData(
-            name=template["name"],
-            display_name=template["display_name"],
-            schema_version=template["schema_version"],
-            version=template["version"],
-            oid=template["oid"])
-        return template_data
+        return TemplateData(
+            name=_get_any(template, "name", "Name"),
+            display_name=_get_any(template, "display_name", "DisplayName"),
+            schema_version=_get_any(template, "schema_version", "SchemaVersion"),
+            version=_get_any(template, "version", "Version"),
+            oid=_get_any(template, "oid", "OID"),
+        )
 
     @staticmethod
     def from_dicts(templates):
@@ -74,17 +84,17 @@ class AuthorityData:
 
     @staticmethod
     def from_dict(authority):
-        authority_data = AuthorityData(
-            name=authority["name"],
-            display_name=authority["display_name"],
-            computer_name=authority["computer_name"],
-            config_string=authority["config_string"],
-            ca_type=authority["ca_type"],
-            is_enterprise=authority["is_enterprise"],
-            is_root=authority["is_root"],
-            is_accessible=authority["is_accessible"],
-            service_status=authority["service_status"])
-        return authority_data
+        return AuthorityData(
+            name=_get_any(authority, "name", "Name"),
+            display_name=_get_any(authority, "display_name", "DisplayName"),
+            computer_name=_get_any(authority, "computer_name", "ComputerName"),
+            config_string=_get_any(authority, "config_string", "ConfigString"),
+            ca_type=_get_any(authority, "ca_type", "Type", "type"),
+            is_enterprise=bool(_get_any(authority, "is_enterprise", "IsEnterprise", default=False)),
+            is_root=bool(_get_any(authority, "is_root", "IsRoot", default=False)),
+            is_accessible=bool(_get_any(authority, "is_accessible", "IsAccessible", default=False)),
+            service_status=_get_any(authority, "service_status", "ServiceStatus"),
+        )
 
     @staticmethod
     def from_dicts(authorities):
@@ -94,9 +104,44 @@ class AuthorityData:
         return authority_data
 
 
+def _safe_json_loads(std_out_bytes):
+    text = std_out_bytes.decode("utf-8", errors="replace").strip()
+    if not text:
+        return []
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        # Some PowerShell cmdlets may emit warnings/noise;
+        # try to find the first JSON array/object region.
+        first_brace = text.find("{")
+        first_bracket = text.find("[")
+        idxs = [i for i in [first_brace, first_bracket] if i != -1]
+        if not idxs:
+            return []
+        start = min(idxs)
+        try:
+            data = json.loads(text[start:])
+        except Exception:
+            return []
+    # Normalize: always return a list for arrays, or list with single object
+    if isinstance(data, list):
+        return data
+    return [data]
+
+
 class DumpParser:
     @staticmethod
     def parse_certificates(input_data):
+        records = _safe_json_loads(input_data.std_out)
+        results = []
+        for r in records:
+            template = r.get("CertificateTemplate") or ""
+            cert_b64 = r.get("RawCertificate") or ""
+            results.append(ParseResult(template, cert_b64))
+        return results
+
+    @staticmethod
+    def parse_certificates_text(input_data):
         input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
@@ -130,6 +175,20 @@ class DumpParser:
 
     @staticmethod
     def parse_identified_certificates(input_data):
+        records = _safe_json_loads(input_data.std_out)
+        out = []
+        for r in records:
+            out.append(
+                IdentifiedCertificate(
+                    certificate_template=r.get("CertificateTemplate") or "",
+                    serial_number=r.get("SerialNumber") or "",
+                    config_string=r.get("ConfigString") or "",
+                )
+            )
+        return out
+
+    @staticmethod
+    def parse_identified_certificates_text(input_data):
         input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
@@ -158,6 +217,11 @@ class DumpParser:
 
     @staticmethod
     def parse_template_data(input_data):
+        records = _safe_json_loads(input_data.std_out)
+        return TemplateData.from_dicts(records)
+
+    @staticmethod
+    def parse_template_data_text(input_data):
         input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
@@ -194,6 +258,11 @@ class DumpParser:
 
     @staticmethod
     def parse_authority_data(input_data):
+        records = _safe_json_loads(input_data.std_out)
+        return AuthorityData.from_dicts(records)
+
+    @staticmethod
+    def parse_authority_data_text(input_data):
         input_string = input_data.std_out.decode("utf-8", errors="replace")
         lines = input_string.strip().split('\n')
         result = []
