@@ -241,7 +241,7 @@ Properties                 : {[RequestID, 789], [Request.StatusCode, 0], [Reques
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
-        templates = DumpParser.parse_certificates(result)
+        templates = DumpParser.parse_certificates_text(result)
         self.assertEqual(len(templates), 5)
         self.assertEqual(templates[2].template, "WebServer")
 
@@ -281,7 +281,7 @@ OID           : 1.3.6.1.4.1.311.21.8.16335329.656368.4341948.8708353.10624234.20
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
-        templates = DumpParser.parse_template_data(result)
+        templates = DumpParser.parse_template_data_text(result)
         self.assertEqual(len(templates), 5)
         self.assertEqual(templates[0].name, "TestofEnrollmentAgent")
         self.assertEqual(templates[1].display_name, "User")
@@ -310,7 +310,7 @@ Properties                 : {[RequestID, 810], [Request.StatusCode, 0], [Reques
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
-        templates = DumpParser.parse_identified_certificates(result)
+        templates = DumpParser.parse_identified_certificates_text(result)
         self.assertEqual(len(templates), 1)
         self.assertEqual(templates[0].certificate_template, "WebServer")
         self.assertEqual(templates[0].serial_number, "180000032a9a1aac7197589cef00000000032a")
@@ -359,7 +359,7 @@ EnrollmentEndpoints  : {https://vmi307469.3key.local/Demo%20MS%20Sub%20CA_CES_Ke
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
-        templates = DumpParser.parse_authority_data(result)
+        templates = DumpParser.parse_authority_data_text(result)
         self.assertEqual(len(templates), 1)
         self.assertEqual(templates[0].name, "Demo MS Sub CA")
         self.assertEqual(templates[0].display_name, "Demo MS Sub CA")
@@ -411,7 +411,7 @@ EnrollmentEndpoints : {}
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
-        templates = DumpParser.parse_authority_data(result)
+        templates = DumpParser.parse_authority_data_text(result)
         self.assertEqual(len(templates), 1)
         self.assertEqual(templates[0].name, "TEST CA 02 Class B")
         self.assertEqual(templates[0].display_name, "TEST CA 02 Class B")
@@ -439,7 +439,7 @@ ServiceStatus :
         """
         protocol_output = bytes(data, 'utf-8'), bytes(data, 'utf-8'), 0
         result = winrm.Response(protocol_output)
-        templates = DumpParser.parse_authority_data(result)
+        templates = DumpParser.parse_authority_data_text(result)
         self.assertEqual(len(templates), 1)
         self.assertEqual(templates[0].name, "3KEY-LAB-CA1")
         self.assertEqual(templates[0].display_name, "3KEY-LAB-CA1")
