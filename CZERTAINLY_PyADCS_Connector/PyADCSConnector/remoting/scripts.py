@@ -95,7 +95,7 @@ function Convert-RawCertToBytes {
     $s = $s -replace '-----END [^-]+-----',''
   }
   $s = $s -replace '\\s',''
-  # [Convert]::FromBase64String($s)
+  [Convert]::FromBase64String($s)
 }
 """
 
@@ -331,7 +331,7 @@ try {{
 
     $raw = $vals['RawCertificate']
     $rawBytes = if ($null -ne $raw) {{ Convert-RawCertToBytes $raw }} else {{ $null }}
-    # $b64 = if ($rawBytes) {{ [Convert]::ToBase64String($rawBytes) }} else {{ $null }}
+    $b64 = if ($rawBytes) {{ [Convert]::ToBase64String($rawBytes) }} else {{ $null }}
 
     $tmpl = [string]$vals['CertificateTemplate']
     $tmplPretty = if ($tmpl -match '^\\d+(\\.\\d+)+$') {{ $tmpl }} else {{ $tmpl }}
@@ -344,7 +344,7 @@ try {{
       'Request.SubmittedWhen'      = $vals['Request.SubmittedWhen']
       'Request.CommonName'         = $vals['Request.CommonName']
       CertificateTemplate          = $tmpl
-      RawCertificate               = $rawBytes
+      RawCertificate               = $b64
       CertificateTemplateOid       = $tmplPretty
       RowId                        = $vals['RequestID']
       ConfigString                 = $caName
