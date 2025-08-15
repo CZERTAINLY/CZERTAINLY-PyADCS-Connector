@@ -1,9 +1,8 @@
 from PyADCSConnector.exceptions.authority_exception import AuthorityException
 from PyADCSConnector.exceptions.remoting_exception import RemotingException
 from PyADCSConnector.models.authority_instance import AuthorityInstance
-from PyADCSConnector.remoting.winrm.scripts import verify_connection_script, get_cas_script, get_templates_script
-from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance, \
-    create_session_from_authority_instance_uuid
+from PyADCSConnector.remoting.remoting import invoke_remote_script, invoke_remote_script_uuid
+from PyADCSConnector.remoting.scripts import get_cas_script, get_templates_script, verify_connection_script
 from PyADCSConnector.services.attributes.authority_attributes import *
 from PyADCSConnector.utils import attribute_definition_utils
 from PyADCSConnector.utils.dump_parser import DumpParser
@@ -35,8 +34,8 @@ def update_authority_instance(request_dto, authority_instance):
                                                                                 authority_instance.attributes)
     authority_instance.https = attribute_definition_utils.get_attribute_value(AUTHORITY_USE_HTTPS_ATTRIBUTE_NAME,
                                                                               authority_instance.attributes)
-    authority_instance.port = attribute_definition_utils.get_attribute_value(AUTHORITY_WINRM_PORT_ATTRIBUTE_NAME,
-                                                                             authority_instance.attributes)
+    authority_instance.port = int(attribute_definition_utils.get_attribute_value(AUTHORITY_WINRM_PORT_ATTRIBUTE_NAME,
+                                                                             authority_instance.attributes))
     authority_instance.credential = attribute_definition_utils.get_attribute_value(AUTHORITY_CREDENTIAL_ATTRIBUTE_NAME,
                                                                                    authority_instance.attributes)
 
@@ -49,19 +48,13 @@ def update_authority_instance(request_dto, authority_instance):
 
 def verify_connection(authority_instance):
     if authority_instance.transport == "credssp":
-        session = create_session_from_authority_instance(authority_instance)
-        session.connect()
-        session.run_ps(verify_connection_script())
-        session.disconnect()
+        invoke_remote_script(authority_instance, verify_connection_script())
     else:
         raise RemotingException("Unsupported transport type: %s" % authority_instance.transport)
 
 
 def get_cas(authority_instance_uuid):
-    session = create_session_from_authority_instance_uuid(authority_instance_uuid)
-    session.connect()
-    result = session.run_ps(get_cas_script())
-    session.disconnect()
+    result = invoke_remote_script_uuid(authority_instance_uuid, get_cas_script())
 
     # Convert string to lines
     # regular_string = result.std_out.decode('utf-8')
@@ -75,10 +68,7 @@ def get_cas(authority_instance_uuid):
 
 
 def get_templates(authority_instance_uuid):
-    session = create_session_from_authority_instance_uuid(authority_instance_uuid)
-    session.connect()
-    result = session.run_ps(get_templates_script())
-    session.disconnect()
+    result = invoke_remote_script_uuid(authority_instance_uuid, get_templates_script())
 
     # Convert string to lines
     # regular_string = result.std_out.decode('utf-8')

@@ -11,8 +11,8 @@ from PyADCSConnector.objects.authority_instance_attribute import AuthorityInstan
 from PyADCSConnector.objects.discovery_certificate_dto import DiscoveryCertificateDto
 from PyADCSConnector.objects.discovery_history_request_dto import DiscoveryHistoryRequestDto
 from PyADCSConnector.objects.discovery_history_response_dto import DiscoveryHistoryResponseDto
-from PyADCSConnector.remoting.winrm.scripts import get_cas_script, dump_certificates_script
-from PyADCSConnector.remoting.winrm_remoting import create_session_from_authority_instance
+from PyADCSConnector.remoting.remoting import invoke_remote_script
+from PyADCSConnector.remoting.scripts import get_cas_script, dump_certificates_script
 from PyADCSConnector.services.attributes.discovery_attributes import *
 from PyADCSConnector.services.attributes.metadata_attributes import get_ca_name_metadata_attribute, \
     get_template_name_metadata_attribute, get_failed_reason_metadata_attribute
@@ -92,45 +92,40 @@ def discover_certificates(request_dto, discovery_history):
     logger.debug("Authority instance: %s, CA names: %s, Template names: %s" %
                  (authority_instance, cas, templates))
 
-    session = create_session_from_authority_instance(authority)
-    session.connect()
-
     # if ca_names is empty, then get all CAs
     # TODO: This operation may timeout if there are too many CAs, especially when their are not accessible,
     #  it should be handled
     if not cas:
-        result = session.run_ps(get_cas_script())
+        result = invoke_remote_script(authority, get_cas_script())
         cas = DumpParser.parse_authority_data(result)
 
     total_certificates = []
     for ca in cas:
         if not templates:
             page = 1
-            result = session.run_ps(dump_certificates_script(
+            result = invoke_remote_script(authority, dump_certificates_script(
                 ca, None, issued_after, 1, ADCS_SEARCH_PAGE_SIZE))
             certificates = DumpParser.parse_certificates(result)
             total_certificates.extend(certificates)
             while len(certificates) == ADCS_SEARCH_PAGE_SIZE:
                 page += 1
-                result = session.run_ps(dump_certificates_script(
+                result = invoke_remote_script(authority, dump_certificates_script(
                     ca, None, issued_after, page, ADCS_SEARCH_PAGE_SIZE))
                 certificates = DumpParser.parse_certificates(result)
                 total_certificates.extend(certificates)
         else:
             for template in templates:
                 page = 1
-                result = session.run_ps(dump_certificates_script(
+                result = invoke_remote_script(authority, dump_certificates_script(
                     ca, template, issued_after, page, ADCS_SEARCH_PAGE_SIZE))
                 certificates = DumpParser.parse_certificates(result)
                 total_certificates.extend(certificates)
                 while len(certificates) == ADCS_SEARCH_PAGE_SIZE:
                     page += 1
-                    result = session.run_ps(dump_certificates_script(
+                    result = invoke_remote_script(authority, dump_certificates_script(
                         ca, template, issued_after, page, ADCS_SEARCH_PAGE_SIZE))
                     certificates = DumpParser.parse_certificates(result)
                     total_certificates.extend(certificates)
-
-    session.disconnect()
 
     for certificate in total_certificates:
         discovery_certificate = DiscoveryCertificate()

@@ -5,6 +5,7 @@ import winrm
 
 from PyADCSConnector.exceptions.winrm_execution_exception import WinRMExecutionException
 from PyADCSConnector.models.authority_instance import AuthorityInstance
+from PyADCSConnector.remoting.remote_result import RemoteResult
 from PyADCSConnector.utils import attribute_definition_utils
 
 logger = logging.getLogger(__name__)
@@ -50,8 +51,20 @@ class WinRmRemoting(object):
         logger.debug("Running Powershell script: " + script)
         # must use utf16 little endian on windows
         encoded_ps = b64encode(script.encode('utf_16_le')).decode('ascii')
-        result = self.run('powershell -encodedcommand {0}'.format(encoded_ps))
-        return result
+
+        cmd = (
+            "powershell -NoProfile -NonInteractive "
+            "-ExecutionPolicy Bypass -NoLogo -EncodedCommand {0}"
+        ).format(encoded_ps)
+
+        result = self.run(cmd)
+
+        return RemoteResult(
+            status_code=result.status_code,
+            std_out=result.std_out,
+            std_err=result.std_err,
+            had_errors=(result.status_code != 0),
+        )
 
     def disconnect(self):
         self.protocol.close_shell(self.shell_id)
@@ -66,15 +79,15 @@ def check_result(result):
 
 def create_session_from_authority_instance_name(authority_instance_name):
     authority_instance = AuthorityInstance.objects.get(name=authority_instance_name)
-    return create_session_from_authority_instance(authority_instance)
+    return create_winrm_session_from_authority_instance(authority_instance)
 
 
-def create_session_from_authority_instance_uuid(authority_instance_uuid):
+def create_winrm_session_from_authority_instance_uuid(authority_instance_uuid):
     authority_instance = AuthorityInstance.objects.get(uuid=authority_instance_uuid)
-    return create_session_from_authority_instance(authority_instance)
+    return create_winrm_session_from_authority_instance(authority_instance)
 
 
-def create_session_from_authority_instance(authority_instance):
+def create_winrm_session_from_authority_instance(authority_instance):
     username = attribute_definition_utils.get_attribute_value("username",
                                                               authority_instance.credential.get("attributes"))
     password = attribute_definition_utils.get_attribute_value("password",
